@@ -281,7 +281,7 @@
                                 <button type="button" id="guidePackBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Gerar Pack</button>
                                 <button type="button" id="guideDiagnoseBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors">Diagnosticar</button>
                             </div>
-                            <p id="backendStatus" class="text-[11px] text-white/40 min-h-[1rem]">Checando backend local...</p>
+                            <p id="backendStatus" class="text-[11px] text-white/40 min-h-[1rem]">Checando backend...</p>
                         </div>
                     </form>
                 </div>
@@ -1303,6 +1303,8 @@
                     imageGenerationReady: false,
                     ytDlpAvailable: false,
                     ytDlpBin: '',
+                    runtime: '',
+                    healthUrl: '',
                     error: ''
                 }
             };
@@ -1555,8 +1557,32 @@
                 return window.location.origin;
             }
 
+            function isHostedDeploymentContext() {
+                if (window.location.protocol === 'file:') return false;
+                if (!/^https?:$/.test(window.location.protocol)) return false;
+                if (window.location.port === '8787') return false;
+                return !isLocalDevelopmentHost(window.location.hostname);
+            }
+
+            function resolveHealthApiUrls() {
+                const base = resolveBackendApiBase();
+                const urls = [
+                    `${base}/api/health`,
+                    `${base}/health`
+                ];
+                if (!isHostedDeploymentContext()) {
+                    urls.push(
+                        'http://127.0.0.1:8787/api/health',
+                        'http://127.0.0.1:8787/health',
+                        'http://localhost:8787/api/health',
+                        'http://localhost:8787/health'
+                    );
+                }
+                return [...new Set(urls)];
+            }
+
             function resolveHealthApiUrl() {
-                return `${resolveBackendApiBase()}/api/health`;
+                return resolveHealthApiUrls()[0];
             }
 
             function resolveAgentSignedUrlApi() {
@@ -1595,9 +1621,11 @@
                 }
                 const lines = [];
                 lines.push(appState.backend.online ? 'Backend: online' : 'Backend: offline');
+                if (appState.backend.runtime) lines.push(`Runtime: ${appState.backend.runtime}`);
                 lines.push(appState.backend.hasElevenLabsKey ? 'ElevenLabs key: OK' : 'ElevenLabs key: ausente');
                 lines.push(appState.backend.imageGenerationReady ? 'Complement image API: pronta' : 'Complement image API: usando key local da aba');
                 lines.push(appState.backend.ytDlpAvailable ? `yt-dlp: OK (${appState.backend.ytDlpBin || 'yt-dlp'})` : `yt-dlp: indisponível (${appState.backend.ytDlpBin || 'yt-dlp'})`);
+                if (appState.backend.healthUrl) lines.push(`Health: ${appState.backend.healthUrl}`);
                 if (appState.sourceKind === 'youtube') {
                     lines.push(appState.backend.youtubeTranscribeReady ? 'YouTube + transcrição: pronto' : 'YouTube + transcrição: pendente');
                 } else {
@@ -1607,14 +1635,29 @@
                 return lines.join(' | ');
             }
 
+            function getBackendOfflineInstruction(detail = '') {
+                const tail = detail ? ` (${detail})` : '';
+                if (isHostedDeploymentContext()) {
+                    return `Backend do deploy indisponível${tail}. Verifique Functions e Deployment Protection na Vercel.`;
+                }
+                return 'Backend offline. Inicie com: node server.mjs (porta 8787).';
+            }
+
             function getTranscribeBlockingReason() {
                 if (!appState.backend.online) {
-                    return 'Servidor local indisponível na porta 8787. Rode: `node server.mjs`.';
+                    return isHostedDeploymentContext()
+                        ? 'Backend de transcrição do deploy está indisponível. Verifique logs e env vars na Vercel.'
+                        : 'Servidor local indisponível na porta 8787. Rode: `node server.mjs`.';
                 }
                 if (!appState.backend.hasElevenLabsKey) {
-                    return 'ELEVENLABS_API_KEY ausente no backend (.env).';
+                    return isHostedDeploymentContext()
+                        ? 'ELEVENLABS_API_KEY ausente na Vercel (Environment Variables).'
+                        : 'ELEVENLABS_API_KEY ausente no backend (.env).';
                 }
                 if (appState.sourceKind === 'youtube' && !appState.backend.ytDlpAvailable) {
+                    if (isHostedDeploymentContext() || appState.backend.runtime === 'serverless') {
+                        return 'YouTube auto-transcribe indisponível no deploy serverless. Faça upload do arquivo para transcrever.';
+                    }
                     return `yt-dlp indisponível (${appState.backend.ytDlpBin || 'yt-dlp'}). Instale para transcrever YouTube automaticamente.`;
                 }
                 return '';
@@ -1727,13 +1770,34 @@
 
                 backendHealthPromise = (async () => {
                     try {
-                        const response = await fetchWithTimeout(resolveHealthApiUrl(), {
-                            method: 'GET',
-                            cache: 'no-store'
-                        }, 4500);
-                        const payload = await response.json().catch(() => ({}));
-                        if (!response.ok) {
-                            throw new Error(payload.error || 'health endpoint retornou erro.');
+                        let payload = null;
+                        let resolvedHealthUrl = '';
+                        let lastError = null;
+                        const candidates = resolveHealthApiUrls();
+
+                        for (const healthUrl of candidates) {
+                            try {
+                                const response = await fetchWithTimeout(healthUrl, {
+                                    method: 'GET',
+                                    cache: 'no-store'
+                                }, 9000);
+                                const maybePayload = await response.json().catch(() => ({}));
+                                if (!response.ok) {
+                                    if (response.status === 401 || response.status === 403) {
+                                        throw new Error('Deploy protegido por autenticação. Faça login na Vercel ou desative Deployment Protection.');
+                                    }
+                                    throw new Error(maybePayload.error || `health endpoint retornou HTTP ${response.status}.`);
+                                }
+                                payload = maybePayload;
+                                resolvedHealthUrl = healthUrl;
+                                break;
+                            } catch (error) {
+                                lastError = error;
+                            }
+                        }
+
+                        if (!payload) {
+                            throw lastError || new Error('Nenhum endpoint de health respondeu.');
                         }
 
                         appState.backend.checked = true;
@@ -1745,15 +1809,26 @@
                         appState.backend.imageGenerationReady = Boolean(payload.imageGenerationReady);
                         appState.backend.ytDlpAvailable = Boolean(payload.ytDlp?.available);
                         appState.backend.ytDlpBin = String(payload.ytDlp?.configured || payload.ytDlp?.command || '');
+                        appState.backend.runtime = String(payload.runtime || (isHostedDeploymentContext() ? 'serverless' : 'local-node'));
+                        appState.backend.healthUrl = resolvedHealthUrl;
                         appState.backend.error = '';
 
                         const problems = [];
-                        if (!appState.backend.hasElevenLabsKey) problems.push('sem ELEVENLABS_API_KEY');
-                        if (appState.sourceKind === 'youtube' && !appState.backend.ytDlpAvailable) problems.push('yt-dlp ausente para YouTube');
+                        if (!appState.backend.hasElevenLabsKey) {
+                            problems.push(isHostedDeploymentContext() ? 'sem ELEVENLABS_API_KEY na Vercel' : 'sem ELEVENLABS_API_KEY');
+                        }
+                        if (appState.sourceKind === 'youtube' && !appState.backend.ytDlpAvailable) {
+                            if (isHostedDeploymentContext() || appState.backend.runtime === 'serverless') {
+                                problems.push('YouTube auto-transcribe exige upload no deploy');
+                            } else {
+                                problems.push('yt-dlp ausente para YouTube');
+                            }
+                        }
+                        const backendLabel = isHostedDeploymentContext() ? 'Backend do deploy' : 'Backend local';
                         if (problems.length) {
-                            setBackendStatus(`Backend online, mas com pendências: ${problems.join(' | ')}`, 'error');
+                            setBackendStatus(`${backendLabel} online, mas com pendências: ${problems.join(' | ')}`, 'error');
                         } else {
-                            setBackendStatus('Backend local online e pronto para transcrição/agent.', 'success');
+                            setBackendStatus(`${backendLabel} online e pronto para transcrição/agent.`, 'success');
                         }
                     } catch (error) {
                         appState.backend.checked = true;
@@ -1764,8 +1839,10 @@
                         appState.backend.youtubeTranscribeReady = false;
                         appState.backend.imageGenerationReady = false;
                         appState.backend.ytDlpAvailable = false;
+                        appState.backend.runtime = '';
+                        appState.backend.healthUrl = '';
                         appState.backend.error = error.message || 'Backend indisponível.';
-                        setBackendStatus('Backend offline. Inicie com: node server.mjs (porta 8787).', 'error');
+                        setBackendStatus(getBackendOfflineInstruction(appState.backend.error), 'error');
                     } finally {
                         backendHealthLastCheckAt = Date.now();
                         backendHealthPromise = null;
@@ -2083,7 +2160,11 @@
                         body: JSON.stringify(payload)
                     }, 180000);
                 } catch (_error) {
-                    throw new Error('Falha de conexão com o serviço local de transcrição (porta 8787).');
+                    throw new Error(
+                        isHostedDeploymentContext()
+                            ? 'Falha de conexão com o backend de transcrição no deploy.'
+                            : 'Falha de conexão com o serviço local de transcrição (porta 8787).'
+                    );
                 }
 
                 const data = await response.json().catch(() => ({}));

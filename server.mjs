@@ -33,6 +33,8 @@ const ELEVENLABS_ENDPOINT = 'https://api.elevenlabs.io/v1/speech-to-text';
 const ELEVENLABS_SIGNED_URL_ENDPOINT = 'https://api.elevenlabs.io/v1/convai/conversation/get-signed-url';
 const OPENAI_IMAGES_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 const YT_DLP_HEALTH_TTL_MS = 60 * 1000;
+const YT_DLP_HEALTH_TIMEOUT_MS = Number(env.YT_DLP_HEALTH_TIMEOUT_MS || 3500);
+const IS_SERVERLESS_RUNTIME = Boolean(env.VERCEL || env.VERCEL_ENV || env.NOW_REGION || env.AWS_REGION);
 
 let ytDlpHealthState = {
   checkedAt: 0,
@@ -206,6 +208,16 @@ async function runYtDlp(args, options = {}) {
 }
 
 async function getYtDlpHealth(force = false) {
+  if (IS_SERVERLESS_RUNTIME) {
+    ytDlpHealthState = {
+      checkedAt: Date.now(),
+      available: false,
+      detail: 'yt-dlp disabled in serverless runtime',
+      command: YT_DLP_BIN
+    };
+    return ytDlpHealthState;
+  }
+
   const now = Date.now();
   if (!force && ytDlpHealthState.checkedAt && now - ytDlpHealthState.checkedAt < YT_DLP_HEALTH_TTL_MS) {
     return ytDlpHealthState;
@@ -214,7 +226,7 @@ async function getYtDlpHealth(force = false) {
 
   ytDlpHealthPromise = (async () => {
     try {
-      const result = await runYtDlp(['--version'], { timeoutMs: 10000 });
+      const result = await runYtDlp(['--version'], { timeoutMs: YT_DLP_HEALTH_TIMEOUT_MS });
       const versionLine = String(result.stdout || result.stderr || '')
         .split(/\r?\n/)
         .map((line) => line.trim())
@@ -247,6 +259,7 @@ async function buildHealthPayload() {
   return {
     ok: true,
     service: 'jv-video-studio',
+    runtime: IS_SERVERLESS_RUNTIME ? 'serverless' : 'local-node',
     now: new Date().toISOString(),
     hasElevenLabsKey,
     hasOpenAiKey: Boolean(OPENAI_API_KEY),
