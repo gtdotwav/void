@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { cwd, env } from 'node:process';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createAutomationEngine } from './lib/automation-engine.mjs';
+import { createKeyVault } from './lib/key-vault.mjs';
 
 const ROOT = resolve(cwd());
 const DOT_ENV_PATH = resolve(ROOT, '.env');
@@ -39,6 +41,10 @@ const MAX_TRANSCRIBE_MEDIA_BYTES = 140 * 1024 * 1024;
 const YOUTUBE_INFO_ENDPOINT = 'https://www.youtube.com/get_video_info';
 const YOUTUBE_WATCH_ENDPOINT = 'https://www.youtube.com/watch';
 const YOUTUBE_FETCH_USER_AGENT = env.YOUTUBE_FETCH_USER_AGENT || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+const DATA_ROOT = IS_SERVERLESS_RUNTIME ? join(tmpdir(), 'jv-video-studio') : join(ROOT, 'data');
+
+const keyVault = createKeyVault({ dataRoot: DATA_ROOT, envVars: env });
+const automationEngine = createAutomationEngine({ dataRoot: DATA_ROOT });
 
 let ytDlpHealthState = {
   checkedAt: 0,
@@ -530,7 +536,12 @@ async function getYtDlpHealth(force = false) {
 
 async function buildHealthPayload() {
   const ytDlp = await getYtDlpHealth(false);
-  const hasElevenLabsKey = Boolean(ELEVENLABS_API_KEY);
+  const vaultElevenLabsKey = await keyVault.resolveProviderKeyValue('elevenlabs').catch(() => '');
+  const vaultOpenAiKey = await keyVault.resolveProviderKeyValue('openai').catch(() => '');
+  const hasElevenLabsKey = Boolean(ELEVENLABS_API_KEY || vaultElevenLabsKey);
+  const hasOpenAiKey = Boolean(OPENAI_API_KEY || vaultOpenAiKey);
+  const keyVaultStatus = keyVault.getStatus();
+  const providerUsage = await keyVault.getUsageSnapshot().catch(() => ({}));
   const youtubeHttpFallbackReady = true;
   return {
     ok: true,
@@ -538,13 +549,17 @@ async function buildHealthPayload() {
     runtime: IS_SERVERLESS_RUNTIME ? 'serverless' : 'local-node',
     now: new Date().toISOString(),
     hasElevenLabsKey,
-    hasOpenAiKey: Boolean(OPENAI_API_KEY),
+    hasOpenAiKey,
     defaultAgentId: ELEVENLABS_AGENT_ID || null,
     directTranscribeReady: hasElevenLabsKey,
     youtubeMetadataReady: ytDlp.available || youtubeHttpFallbackReady,
     youtubeTranscribeReady: hasElevenLabsKey && (ytDlp.available || youtubeHttpFallbackReady),
     youtubeFallbackReady: youtubeHttpFallbackReady,
-    imageGenerationReady: Boolean(OPENAI_API_KEY),
+    keyVaultReady: keyVaultStatus.ready,
+    keyVaultProviders: keyVaultStatus.providers,
+    automationReady: true,
+    providerUsage,
+    imageGenerationReady: hasOpenAiKey,
     ytDlp: {
       configured: ytDlp.command,
       available: ytDlp.available,
@@ -829,7 +844,8 @@ async function transcribeBufferWithElevenLabs({
   fileName,
   mimeType,
   modelId,
-  languageCode
+  languageCode,
+  apiKey
 }) {
   if (!mediaBuffer || !mediaBuffer.length) {
     throw new Error('Arquivo vazio para transcrição.');
@@ -853,7 +869,7 @@ async function transcribeBufferWithElevenLabs({
     upstream = await fetch(ELEVENLABS_ENDPOINT, {
       method: 'POST',
       headers: {
-        'xi-api-key': ELEVENLABS_API_KEY
+        'xi-api-key': apiKey || ELEVENLABS_API_KEY
       },
       body: formData,
       signal: controller.signal
@@ -951,9 +967,24 @@ async function serveStatic(req, res, pathname) {
 }
 
 async function handleTranscribe(req, res) {
-  if (!ELEVENLABS_API_KEY) {
+  const vaultElevenLabsKey = await keyVault.resolveProviderKeyValue('elevenlabs').catch(() => '');
+  const activeElevenLabsKey = ELEVENLABS_API_KEY || vaultElevenLabsKey;
+
+  if (!activeElevenLabsKey) {
     sendJson(res, 500, {
-      error: 'ELEVENLABS_API_KEY não definida. Exporte a variável antes de iniciar o servidor.'
+      error: 'ELEVENLABS_API_KEY não definida. Configure no ambiente ou no Key Vault.'
+    });
+    return;
+  }
+
+  const rate = await keyVault.consumeRateLimit('elevenlabs', {
+    limitPerMinute: Number(env.ELEVENLABS_RATE_LIMIT_PER_MIN || 25),
+    windowMs: 60000
+  }).catch(() => ({ ok: true, remaining: 0 }));
+  if (!rate.ok) {
+    sendJson(res, 429, {
+      error: 'Rate limit de transcrição atingido para ElevenLabs.',
+      retryAt: new Date(Number(rate.resetAt || Date.now() + 60000)).toISOString()
     });
     return;
   }
@@ -1005,10 +1036,12 @@ async function handleTranscribe(req, res) {
       fileName,
       mimeType,
       modelId,
-      languageCode
+      languageCode,
+      apiKey: activeElevenLabsKey
     });
     // eslint-disable-next-line no-console
     console.log('[transcribe] request success');
+    await keyVault.recordProviderUsage('elevenlabs', { costUsd: Number(env.ELEVENLABS_ESTIMATED_COST_PER_TRANSCRIBE || 0) }).catch(() => {});
     sendJson(res, 200, payload);
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -1054,7 +1087,10 @@ async function handleAgentSignedUrl(req, res, requestUrl) {
     return;
   }
 
-  if (!ELEVENLABS_API_KEY) {
+  const vaultElevenLabsKey = await keyVault.resolveProviderKeyValue('elevenlabs').catch(() => '');
+  const activeElevenLabsKey = ELEVENLABS_API_KEY || vaultElevenLabsKey;
+
+  if (!activeElevenLabsKey) {
     sendJson(res, 500, {
       error: 'ELEVENLABS_API_KEY não definida para gerar signed URL do agent.'
     });
@@ -1066,7 +1102,7 @@ async function handleAgentSignedUrl(req, res, requestUrl) {
     upstream = await fetch(`${ELEVENLABS_SIGNED_URL_ENDPOINT}?agent_id=${encodeURIComponent(requestedAgentId)}`, {
       method: 'GET',
       headers: {
-        'xi-api-key': ELEVENLABS_API_KEY
+        'xi-api-key': activeElevenLabsKey
       }
     });
   } catch (_error) {
@@ -1125,14 +1161,28 @@ async function handleComplementImage(req, res) {
     return;
   }
 
-  const apiKey = requestKey || OPENAI_API_KEY;
+  const vaultOpenAiKey = await keyVault.resolveProviderKeyValue('openai').catch(() => '');
+  const apiKey = requestKey || OPENAI_API_KEY || vaultOpenAiKey;
   if (!apiKey) {
     sendJson(res, 400, { error: 'API key ausente. Salve sua key na aba Complementar Vídeo ou configure OPENAI_API_KEY.' });
     return;
   }
 
+  const rate = await keyVault.consumeRateLimit('openai', {
+    limitPerMinute: Number(env.OPENAI_RATE_LIMIT_PER_MIN || 12),
+    windowMs: 60000
+  }).catch(() => ({ ok: true, remaining: 0 }));
+  if (!rate.ok) {
+    sendJson(res, 429, {
+      error: 'Rate limit de geração de imagem atingido para OpenAI.',
+      retryAt: new Date(Number(rate.resetAt || Date.now() + 60000)).toISOString()
+    });
+    return;
+  }
+
   try {
     const result = await generateImageWithOpenAI({ prompt, apiKey, model, size });
+    await keyVault.recordProviderUsage('openai', { costUsd: Number(env.OPENAI_ESTIMATED_COST_PER_IMAGE || 0) }).catch(() => {});
     sendJson(res, 200, {
       ok: true,
       prompt,
@@ -1143,6 +1193,174 @@ async function handleComplementImage(req, res) {
       error: error.message || 'Falha ao gerar imagem.',
       ...(error.upstream ? { upstream: error.upstream } : {})
     });
+  }
+}
+
+async function handleProviderKeysList(_req, res) {
+  try {
+    const keys = await keyVault.listProviderKeys();
+    const usage = await keyVault.getUsageSnapshot().catch(() => ({}));
+    sendJson(res, 200, {
+      ok: true,
+      status: keyVault.getStatus(),
+      keys,
+      usage
+    });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao listar keys.' });
+  }
+}
+
+async function handleProviderKeysSave(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 512 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  const provider = String(body.provider || '').trim();
+  const apiKey = String(body.apiKey || '').trim();
+  const label = String(body.label || 'default').trim();
+  if (!provider || !apiKey) {
+    sendJson(res, 400, { error: 'provider e apiKey são obrigatórios.' });
+    return;
+  }
+
+  try {
+    const saved = await keyVault.saveProviderKey({ provider, apiKey, label });
+    sendJson(res, 200, { ok: true, key: saved });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao salvar key.' });
+  }
+}
+
+async function handleProviderKeysRemove(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 256 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  const provider = String(body.provider || '').trim();
+  const id = String(body.id || '').trim();
+  const label = String(body.label || '').trim();
+  if (!provider || (!id && !label)) {
+    sendJson(res, 400, { error: 'provider e id/label são obrigatórios para remoção.' });
+    return;
+  }
+
+  try {
+    const removed = await keyVault.removeProviderKey({ provider, id, label });
+    sendJson(res, 200, { ok: true, ...removed });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao remover key.' });
+  }
+}
+
+async function handleAutomationIngest(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 2 * 1024 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  try {
+    const result = await automationEngine.runIngestAnalysis(body);
+    sendJson(res, 200, { ok: true, ...result });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao analisar ingestão.' });
+  }
+}
+
+async function handleAutomationFramePatch(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 1024 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  try {
+    const result = await automationEngine.createFramePatch(body);
+    sendJson(res, 200, { ok: true, patch: result });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao criar patch de frame.' });
+  }
+}
+
+async function handleAutomationMotionReconstruct(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 1024 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  try {
+    const result = await automationEngine.createMotionReconstruction(body);
+    sendJson(res, 200, { ok: true, motion: result });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao gerar plano de motion reconstruction.' });
+  }
+}
+
+async function handleAutomationIncrementalRender(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 1024 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  try {
+    const result = await automationEngine.createIncrementalRender(body);
+    sendJson(res, 200, { ok: true, renderPlan: result });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao planejar render incremental.' });
+  }
+}
+
+async function handleWorkflowTemplates(_req, res) {
+  try {
+    const templates = await automationEngine.listTemplates();
+    sendJson(res, 200, { ok: true, templates });
+  } catch (error) {
+    sendJson(res, 500, { error: error.message || 'Falha ao listar templates.' });
+  }
+}
+
+async function handleWorkflowTemplateApply(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 512 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  try {
+    const workflow = await automationEngine.applyTemplate(body);
+    sendJson(res, 200, { ok: true, workflow });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao aplicar template.' });
+  }
+}
+
+async function handleAutomationSnapshot(_req, res) {
+  try {
+    const snapshot = await automationEngine.getStateSnapshot();
+    sendJson(res, 200, { ok: true, snapshot });
+  } catch (error) {
+    sendJson(res, 500, { error: error.message || 'Falha ao buscar snapshot de automação.' });
   }
 }
 
@@ -1165,6 +1383,10 @@ async function handleHealth(req, res) {
       directTranscribeReady: Boolean(ELEVENLABS_API_KEY),
       youtubeMetadataReady: false,
       youtubeTranscribeReady: false,
+      youtubeFallbackReady: true,
+      keyVaultReady: keyVault.getStatus().ready,
+      keyVaultProviders: keyVault.getStatus().providers,
+      automationReady: true,
       imageGenerationReady: Boolean(OPENAI_API_KEY),
       ytDlp: {
         configured: YT_DLP_BIN,
@@ -1227,6 +1449,96 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (pathname === '/api/keys/list') {
+    if (req.method !== 'GET') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleProviderKeysList(req, res);
+    return;
+  }
+
+  if (pathname === '/api/keys/save') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleProviderKeysSave(req, res);
+    return;
+  }
+
+  if (pathname === '/api/keys/remove') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleProviderKeysRemove(req, res);
+    return;
+  }
+
+  if (pathname === '/api/automation/ingest') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleAutomationIngest(req, res);
+    return;
+  }
+
+  if (pathname === '/api/automation/frame/patch') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleAutomationFramePatch(req, res);
+    return;
+  }
+
+  if (pathname === '/api/automation/motion/reconstruct') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleAutomationMotionReconstruct(req, res);
+    return;
+  }
+
+  if (pathname === '/api/automation/render/incremental') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleAutomationIncrementalRender(req, res);
+    return;
+  }
+
+  if (pathname === '/api/automation/snapshot') {
+    if (req.method !== 'GET') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleAutomationSnapshot(req, res);
+    return;
+  }
+
+  if (pathname === '/api/workflow/templates') {
+    if (req.method !== 'GET') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleWorkflowTemplates(req, res);
+    return;
+  }
+
+  if (pathname === '/api/workflow/templates/apply') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleWorkflowTemplateApply(req, res);
+    return;
+  }
+
   await serveStatic(req, res, pathname);
 }
 
@@ -1276,6 +1588,10 @@ function startLocalServer() {
       ? '[server] OPENAI_API_KEY detected: /api/complement/image enabled with env fallback'
       : '[server] OPENAI_API_KEY missing: Complement image generation expects key from UI request');
     // eslint-disable-next-line no-console
+    console.log(keyVault.getStatus().ready
+      ? '[server] Key Vault ready: encrypted multi-provider keys enabled'
+      : '[server] Key Vault not ready: set KEY_VAULT_MASTER_KEY to enable encrypted key storage');
+    // eslint-disable-next-line no-console
     console.log(`[server] YouTube auto-transcribe: yt-dlp=${YT_DLP_BIN} with HTTP fallback enabled`);
   });
 
@@ -1294,6 +1610,16 @@ export {
   handleYoutubeMetadata,
   handleAgentSignedUrl,
   handleComplementImage,
+  handleProviderKeysList,
+  handleProviderKeysSave,
+  handleProviderKeysRemove,
+  handleAutomationIngest,
+  handleAutomationFramePatch,
+  handleAutomationMotionReconstruct,
+  handleAutomationIncrementalRender,
+  handleAutomationSnapshot,
+  handleWorkflowTemplates,
+  handleWorkflowTemplateApply,
   handleRequest,
   startLocalServer
 };

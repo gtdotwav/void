@@ -52,6 +52,24 @@ Campos mais importantes:
 - `youtubeTranscribeReady: true` -> YouTube + transcricao automatica ok
 - `ytDlp.available: true` -> yt-dlp disponivel
 
+## Novas APIs de automacao
+
+- `POST /api/automation/ingest` -> analise de ingestao (cuts, viral, emocao, energia, CTA)
+- `POST /api/automation/frame/patch` -> cria AI patch layer de frame
+- `POST /api/automation/motion/reconstruct` -> plano de reconstrucao de motion
+- `POST /api/automation/render/incremental` -> plano de render diferencial
+- `GET /api/workflow/templates` -> marketplace de templates de workflow
+- `POST /api/workflow/templates/apply` -> aplica template em workflow
+- `GET /api/keys/list` -> lista keys salvas no vault
+- `POST /api/keys/save` -> salva key criptografada por provider
+- `POST /api/keys/remove` -> remove key do vault
+
+## Key Vault (criptografia)
+
+- Configure `KEY_VAULT_MASTER_KEY` no `.env` para ativar armazenamento criptografado de keys.
+- Sem `KEY_VAULT_MASTER_KEY`, o sistema tenta fallback usando material de chave ja existente no ambiente.
+- O frontend pode salvar keys no vault pela aba `Complementar Video`.
+
 ## Variaveis de ambiente
 
 Use o arquivo `.env`:

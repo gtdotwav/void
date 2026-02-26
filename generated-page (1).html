@@ -904,6 +904,33 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="rounded-xl border border-white/10 bg-black/45 p-3 mt-4 space-y-2">
+                        <p class="text-[10px] uppercase tracking-widest text-white/40">AI Infrastructure</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="automationIngestBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Run ingest</button>
+                            <button id="automationLoadTemplatesBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Templates</button>
+                        </div>
+                        <label class="block text-[11px] text-white/60">Patch timestamp (s)
+                            <input id="automationPatchTimestampInput" type="number" min="0" step="0.1" value="0" class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
+                        </label>
+                        <label class="block text-[11px] text-white/60">Patch instruction
+                            <textarea id="automationPatchInstructionInput" rows="2" placeholder="Ex: trocar produto na mão por novo modelo." class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-accent/50"></textarea>
+                        </label>
+                        <label class="block text-[11px] text-white/60">Provider
+                            <select id="automationPatchProviderSelect" class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
+                                <option value="google_nano_banana">Google Nano Banana</option>
+                                <option value="kling">Kling 3.0</option>
+                                <option value="veo">Veo</option>
+                            </select>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="automationCreatePatchBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Create patch</button>
+                            <button id="automationPlanRenderBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Plan render</button>
+                        </div>
+                        <p id="automationInfraStatus" class="text-[11px] text-white/40 min-h-[1rem]">Pronto para ingest/frame patch/render incremental.</p>
+                        <div id="automationInfraLog" class="max-h-[128px] overflow-auto custom-scrollbar rounded-lg border border-white/10 bg-black/35 p-2 space-y-1 text-[11px] text-white/70"></div>
+                    </div>
                 </aside>
             </div>
         </div>
@@ -1191,6 +1218,15 @@
             const automationSuccessRate = document.getElementById('automationSuccessRate');
             const automationRunBtn = document.getElementById('automationRunBtn');
             const automationDeployBtn = document.getElementById('automationDeployBtn');
+            const automationIngestBtn = document.getElementById('automationIngestBtn');
+            const automationLoadTemplatesBtn = document.getElementById('automationLoadTemplatesBtn');
+            const automationPatchTimestampInput = document.getElementById('automationPatchTimestampInput');
+            const automationPatchInstructionInput = document.getElementById('automationPatchInstructionInput');
+            const automationPatchProviderSelect = document.getElementById('automationPatchProviderSelect');
+            const automationCreatePatchBtn = document.getElementById('automationCreatePatchBtn');
+            const automationPlanRenderBtn = document.getElementById('automationPlanRenderBtn');
+            const automationInfraStatus = document.getElementById('automationInfraStatus');
+            const automationInfraLog = document.getElementById('automationInfraLog');
             const automarNodeButtons = Array.from(document.querySelectorAll('.automar-node'));
 
             const timelineModal = document.getElementById('timelineModal');
@@ -1277,7 +1313,11 @@
                 automation: {
                     selectedNodeId: 'trigger_new_video',
                     successRate: 99.1,
-                    nodes: {}
+                    nodes: {},
+                    templates: [],
+                    ingest: null,
+                    patchLayers: [],
+                    renderPlan: null
                 },
                 timeline: {
                     open: false,
@@ -1305,6 +1345,7 @@
                     ytDlpBin: '',
                     runtime: '',
                     healthUrl: '',
+                    keyVaultReady: false,
                     error: ''
                 }
             };
@@ -1601,6 +1642,34 @@
                 return `${resolveBackendApiBase()}/api/complement/image`;
             }
 
+            function resolveAutomationIngestApiUrl() {
+                return `${resolveBackendApiBase()}/api/automation/ingest`;
+            }
+
+            function resolveAutomationFramePatchApiUrl() {
+                return `${resolveBackendApiBase()}/api/automation/frame/patch`;
+            }
+
+            function resolveAutomationMotionApiUrl() {
+                return `${resolveBackendApiBase()}/api/automation/motion/reconstruct`;
+            }
+
+            function resolveAutomationRenderApiUrl() {
+                return `${resolveBackendApiBase()}/api/automation/render/incremental`;
+            }
+
+            function resolveWorkflowTemplatesApiUrl() {
+                return `${resolveBackendApiBase()}/api/workflow/templates`;
+            }
+
+            function resolveWorkflowApplyApiUrl() {
+                return `${resolveBackendApiBase()}/api/workflow/templates/apply`;
+            }
+
+            function resolveKeyVaultSaveApiUrl() {
+                return `${resolveBackendApiBase()}/api/keys/save`;
+            }
+
             async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -1609,6 +1678,24 @@
                 } finally {
                     clearTimeout(timeout);
                 }
+            }
+
+            async function fetchBackendJson(url, options = {}, timeoutMs = 30000) {
+                const response = await fetchWithTimeout(url, options, timeoutMs);
+                const raw = await response.text();
+                let payload = {};
+                try {
+                    payload = raw ? JSON.parse(raw) : {};
+                } catch (_error) {
+                    payload = { error: raw || 'Resposta inválida do backend.' };
+                }
+                if (!response.ok) {
+                    const error = new Error(payload.error || `Erro HTTP ${response.status}.`);
+                    error.statusCode = response.status;
+                    error.payload = payload;
+                    throw error;
+                }
+                return payload;
             }
 
             function updateAgentBadge() {
@@ -1623,6 +1710,7 @@
                 lines.push(appState.backend.online ? 'Backend: online' : 'Backend: offline');
                 if (appState.backend.runtime) lines.push(`Runtime: ${appState.backend.runtime}`);
                 lines.push(appState.backend.hasElevenLabsKey ? 'ElevenLabs key: OK' : 'ElevenLabs key: ausente');
+                lines.push(appState.backend.keyVaultReady ? 'Key Vault: pronto' : 'Key Vault: pendente');
                 lines.push(appState.backend.imageGenerationReady ? 'Complement image API: pronta' : 'Complement image API: usando key local da aba');
                 lines.push(appState.backend.ytDlpAvailable ? `yt-dlp: OK (${appState.backend.ytDlpBin || 'yt-dlp'})` : `yt-dlp: indisponível (${appState.backend.ytDlpBin || 'yt-dlp'})`);
                 if (appState.backend.healthUrl) lines.push(`Health: ${appState.backend.healthUrl}`);
@@ -1811,6 +1899,7 @@
                         appState.backend.ytDlpBin = String(payload.ytDlp?.configured || payload.ytDlp?.command || '');
                         appState.backend.runtime = String(payload.runtime || (isHostedDeploymentContext() ? 'serverless' : 'local-node'));
                         appState.backend.healthUrl = resolvedHealthUrl;
+                        appState.backend.keyVaultReady = Boolean(payload.keyVaultReady);
                         appState.backend.error = '';
 
                         const problems = [];
@@ -1839,6 +1928,7 @@
                         appState.backend.ytDlpAvailable = false;
                         appState.backend.runtime = '';
                         appState.backend.healthUrl = '';
+                        appState.backend.keyVaultReady = false;
                         appState.backend.error = error.message || 'Backend indisponível.';
                         setBackendStatus(getBackendOfflineInstruction(appState.backend.error), 'error');
                     } finally {
@@ -2574,12 +2664,24 @@
 
             function ensureAutomationState() {
                 if (!appState.automation || typeof appState.automation !== 'object') {
-                    appState.automation = { selectedNodeId: 'trigger_new_video', successRate: 99.1, nodes: {} };
+                    appState.automation = {
+                        selectedNodeId: 'trigger_new_video',
+                        successRate: 99.1,
+                        nodes: {},
+                        templates: [],
+                        ingest: null,
+                        patchLayers: [],
+                        renderPlan: null
+                    };
                 }
                 if (!appState.automation.nodes || !Object.keys(appState.automation.nodes).length) {
                     appState.automation.nodes = buildDefaultAutomationNodes();
                 }
                 if (!Number.isFinite(appState.automation.successRate)) appState.automation.successRate = 99.1;
+                if (!Array.isArray(appState.automation.templates)) appState.automation.templates = [];
+                if (!Array.isArray(appState.automation.patchLayers)) appState.automation.patchLayers = [];
+                if (!Object.prototype.hasOwnProperty.call(appState.automation, 'ingest')) appState.automation.ingest = null;
+                if (!Object.prototype.hasOwnProperty.call(appState.automation, 'renderPlan')) appState.automation.renderPlan = null;
                 if (!appState.automation.selectedNodeId || !appState.automation.nodes[appState.automation.selectedNodeId]) {
                     appState.automation.selectedNodeId = 'trigger_new_video';
                 }
@@ -2611,6 +2713,31 @@
                 if (tone === 'error') automationPromptStatus.classList.add('text-red-300');
                 else if (tone === 'success') automationPromptStatus.classList.add('text-accent');
                 else automationPromptStatus.classList.add('text-white/40');
+            }
+
+            function setAutomationInfraStatus(message, tone = 'muted') {
+                if (!automationInfraStatus) return;
+                automationInfraStatus.textContent = message || '';
+                automationInfraStatus.classList.remove('text-red-300', 'text-accent', 'text-white/40');
+                if (tone === 'error') automationInfraStatus.classList.add('text-red-300');
+                else if (tone === 'success') automationInfraStatus.classList.add('text-accent');
+                else automationInfraStatus.classList.add('text-white/40');
+            }
+
+            function appendAutomationInfraLog(message, tone = 'neutral') {
+                if (!automationInfraLog) return;
+                const item = document.createElement('div');
+                const colorClass = tone === 'error'
+                    ? 'text-red-300'
+                    : tone === 'success'
+                        ? 'text-accent'
+                        : 'text-white/70';
+                item.className = `leading-relaxed ${colorClass}`;
+                item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                automationInfraLog.prepend(item);
+                while (automationInfraLog.children.length > 24) {
+                    automationInfraLog.removeChild(automationInfraLog.lastChild);
+                }
             }
 
             function renderAutomationNodesUi() {
@@ -2671,7 +2798,7 @@
                 appendSpaceOutput(`[Automar] ${node.title} atualizado.`, 'success');
             }
 
-            function applyAutomationPrompt() {
+            async function applyAutomationPrompt() {
                 const prompt = String(automationPromptInput.value || '').trim();
                 if (!prompt) {
                     setAutomationPromptStatus('Digite uma instrução para aplicar.', 'error');
@@ -2681,6 +2808,26 @@
                 const node = getAutomationNode(appState.automation.selectedNodeId);
                 if (!node) {
                     setAutomationPromptStatus('Nenhum node selecionado.', 'error');
+                    return;
+                }
+
+                const templateMatch = normalized.match(/(?:template|workflow)\s+([a-z0-9_-]+)/);
+                if (templateMatch) {
+                    try {
+                        const data = await fetchBackendJson(resolveWorkflowApplyApiUrl(), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                templateId: templateMatch[1],
+                                workflowName: `${appState.space.name || 'automar-video-space'}-${templateMatch[1]}`
+                            })
+                        }, 20000);
+                        setAutomationPromptStatus(`Template aplicado: ${data.workflow.templateId}.`, 'success');
+                        appendAutomationInfraLog(`Workflow ${data.workflow.workflowId.slice(0, 8)} criado via template ${data.workflow.templateId}.`, 'success');
+                        addChatMessage('assistant', `Template ${data.workflow.templateId} aplicado com sucesso.`);
+                    } catch (error) {
+                        setAutomationPromptStatus(error.message || 'Falha ao aplicar template.', 'error');
+                    }
                     return;
                 }
 
@@ -2757,6 +2904,16 @@
                 renderAutomationNodesUi();
                 syncAutomationNodePanel();
                 setAutomationPromptStatus('Workspace pronto para automação de vídeos.', 'muted');
+                const clip = getActiveClip() || appState.clips[0];
+                if (clip && automationPatchTimestampInput) {
+                    const currentTime = getPlaybackCurrentTime();
+                    const ts = Number.isFinite(currentTime) ? currentTime : clip.start;
+                    automationPatchTimestampInput.value = String(Number(ts.toFixed(2)));
+                }
+                if (automationInfraLog && !automationInfraLog.children.length) {
+                    appendAutomationInfraLog('Infra pronta: ingest, patch de frame e render incremental disponíveis.', 'neutral');
+                }
+                loadWorkflowTemplatesFromBackend().catch(() => {});
 
                 videoAutomationModal.classList.remove('hidden');
                 videoAutomationModal.classList.add('flex');
@@ -2769,6 +2926,167 @@
                 videoAutomationModal.classList.remove('flex');
                 setAutomationPromptStatus('');
                 updateModalBodyLock();
+            }
+
+            function collectTranscriptForAutomation(maxWords = 540) {
+                const words = [];
+                appState.clips.forEach((clip) => {
+                    if (!Array.isArray(clip.captions)) return;
+                    clip.captions.forEach((caption) => {
+                        const text = String(caption.text || '').trim();
+                        if (!text) return;
+                        words.push(...text.split(/\s+/));
+                    });
+                });
+                return words.slice(0, maxWords).join(' ');
+            }
+
+            async function runAutomationIngest() {
+                if (!appState.sourceSrc) {
+                    setAutomationInfraStatus('Carregue um vídeo/link antes do ingest.', 'error');
+                    return;
+                }
+
+                const payload = {
+                    source: {
+                        kind: appState.sourceKind || 'manual',
+                        url: appState.sourceSrc || '',
+                        label: appState.sourceLabel || ''
+                    },
+                    durationSec: Number(appState.duration || 0) || 60,
+                    transcript: collectTranscriptForAutomation()
+                };
+
+                const data = await fetchBackendJson(resolveAutomationIngestApiUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }, 60000);
+
+                appState.automation.ingest = data;
+                const viralCount = Number(data?.stats?.viralMoments || 0);
+                appState.automation.successRate = clamp(96 + viralCount * 0.25, 90, 100);
+                renderAutomationNodesUi();
+
+                setAutomationInfraStatus(`Ingest analisado: ${data?.stats?.cuts || 0} cuts, ${viralCount} momentos virais.`, 'success');
+                appendAutomationInfraLog(`Ingest ${data.ingestId} concluído (${data.durationSec}s).`, 'success');
+            }
+
+            async function loadWorkflowTemplatesFromBackend() {
+                const data = await fetchBackendJson(resolveWorkflowTemplatesApiUrl(), {
+                    method: 'GET',
+                    cache: 'no-store'
+                }, 20000);
+                appState.automation.templates = Array.isArray(data.templates) ? data.templates : [];
+                if (!appState.automation.templates.length) {
+                    setAutomationInfraStatus('Nenhum template encontrado.', 'error');
+                    return;
+                }
+
+                const names = appState.automation.templates.map((template) => template.name).slice(0, 3).join(' | ');
+                setAutomationInfraStatus(`Templates carregados: ${appState.automation.templates.length}.`, 'success');
+                appendAutomationInfraLog(`Templates: ${names}.`, 'neutral');
+            }
+
+            async function createAutomationFramePatch() {
+                const clip = getActiveClip() || appState.clips[0];
+                if (!clip) {
+                    setAutomationInfraStatus('Selecione um clip para criar patch.', 'error');
+                    return;
+                }
+
+                const inferredPlayhead = getPlaybackCurrentTime();
+                const fallbackTs = Number.isFinite(inferredPlayhead) ? inferredPlayhead : clip.start;
+                const tsInput = parseFloat(automationPatchTimestampInput.value);
+                const timestampSec = Number.isFinite(tsInput) ? tsInput : fallbackTs;
+                const instruction = String(automationPatchInstructionInput.value || '').trim();
+                if (!instruction) {
+                    setAutomationInfraStatus('Descreva a edição do frame antes de criar patch.', 'error');
+                    return;
+                }
+
+                const provider = String(automationPatchProviderSelect.value || 'google_nano_banana').trim();
+                const payload = {
+                    videoId: clip.id,
+                    timestampSec: clamp(timestampSec, clip.start, clip.end),
+                    fps: 30,
+                    region: { x: 0.28, y: 0.2, width: 0.44, height: 0.56 },
+                    instruction,
+                    provider,
+                    model: provider === 'google_nano_banana' ? 'gemini-3-pro-image-preview' : provider,
+                    motionMethod: provider === 'kling' ? 'kling_3' : 'optical_flow_reprojection'
+                };
+
+                const patchResponse = await fetchBackendJson(resolveAutomationFramePatchApiUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }, 25000);
+
+                const patch = patchResponse.patch;
+                appState.automation.patchLayers.unshift(patch);
+                appState.automation.patchLayers = appState.automation.patchLayers.slice(0, 100);
+
+                appendAutomationInfraLog(`Patch ${patch.patchId.slice(0, 8)} criado em ${patch.frame.timestampSec}s.`, 'success');
+
+                const motionResponse = await fetchBackendJson(resolveAutomationMotionApiUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        timestampSec: patch.frame.timestampSec,
+                        method: patch.propagation.method,
+                        radiusSec: patch.propagation.windowSec
+                    })
+                }, 25000);
+                appendAutomationInfraLog(`Motion job ${motionResponse.motion.motionJobId.slice(0, 8)} (${motionResponse.motion.method}).`, 'neutral');
+
+                setAutomationInfraStatus('AI patch layer criada e motion reconstruction planejado.', 'success');
+            }
+
+            async function planAutomationIncrementalRender() {
+                const clip = getActiveClip() || appState.clips[0];
+                const fallbackDuration = clip ? Math.max(2, clip.end - clip.start) : 60;
+                const payload = {
+                    durationSec: Number(appState.duration || fallbackDuration) || fallbackDuration,
+                    fps: 30,
+                    patchLayers: appState.automation.patchLayers,
+                    changedRanges: [],
+                    outputProfiles: ['9:16', '1:1', '16:9']
+                };
+
+                const data = await fetchBackendJson(resolveAutomationRenderApiUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }, 25000);
+
+                appState.automation.renderPlan = data.renderPlan;
+                const changed = Array.isArray(data.renderPlan?.changedRanges) ? data.renderPlan.changedRanges.length : 0;
+                const ratio = Number(data.renderPlan?.cacheHints?.reencodeRatio || 0);
+                setAutomationInfraStatus(`Render incremental pronto: ${changed} segmentos alterados (ratio ${(ratio * 100).toFixed(1)}%).`, 'success');
+                appendAutomationInfraLog(`Render plan ${data.renderPlan.renderPlanId.slice(0, 8)} gerado.`, 'success');
+            }
+
+            async function saveProviderKeyToBackend(provider, apiKey) {
+                const normalizedProvider = String(provider || '').trim().toLowerCase();
+                if (!normalizedProvider || !apiKey) return;
+                const providerMap = {
+                    openai: 'openai',
+                    elevenlabs: 'elevenlabs',
+                    kling: 'kling',
+                    veo: 'veo',
+                    google: 'google_nano_banana'
+                };
+                const mapped = providerMap[normalizedProvider] || normalizedProvider;
+                await fetchBackendJson(resolveKeyVaultSaveApiUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider: mapped,
+                        apiKey,
+                        label: 'ui-default'
+                    })
+                }, 15000);
             }
 
             function applyClipVisualTransform() {
@@ -4843,7 +5161,15 @@
                 appState.exportCount = 0;
                 appState.packCount = 0;
                 appState.space = { connected: false, name: '', thumbs: [], titles: [], hashtags: [] };
-                appState.automation = { selectedNodeId: 'trigger_new_video', successRate: 99.1, nodes: buildDefaultAutomationNodes() };
+                appState.automation = {
+                    selectedNodeId: 'trigger_new_video',
+                    successRate: 99.1,
+                    nodes: buildDefaultAutomationNodes(),
+                    templates: [],
+                    ingest: null,
+                    patchLayers: [],
+                    renderPlan: null
+                };
                 appState.timeline = { open: false, clipId: null };
                 appState.clipboard = { clipStyle: null, crop: null };
                 appState.complement.busy = false;
@@ -5073,15 +5399,25 @@
                 setComplementStatus(`Provider: ${appState.complement.provider}.`, 'muted');
             });
 
-            complementSaveKeyBtn.addEventListener('click', () => {
+            complementSaveKeyBtn.addEventListener('click', async () => {
                 const key = String(complementApiKeyInput.value || '').trim();
                 if (!key) {
                     setComplementStatus('Cole uma API key antes de salvar.', 'error');
                     return;
                 }
-                appState.complement.apiKey = key;
-                saveComplementApiKey(appState.complement.provider, key);
-                setComplementStatus('API key salva localmente neste navegador.', 'success');
+                complementSaveKeyBtn.disabled = true;
+                try {
+                    appState.complement.apiKey = key;
+                    saveComplementApiKey(appState.complement.provider, key);
+                    await saveProviderKeyToBackend(appState.complement.provider, key);
+                    setComplementStatus('API key salva localmente + Key Vault backend.', 'success');
+                    appendAutomationInfraLog(`Key ${appState.complement.provider} salva no vault.`, 'success');
+                } catch (error) {
+                    setComplementStatus(`Key salva localmente, mas falhou no backend: ${error.message}`, 'error');
+                    appendAutomationInfraLog(`Falha ao salvar key no vault: ${error.message}`, 'error');
+                } finally {
+                    complementSaveKeyBtn.disabled = false;
+                }
             });
 
             complementClearKeyBtn.addEventListener('click', () => {
@@ -5229,6 +5565,54 @@
                 renderAutomationNodesUi();
                 setAutomationPromptStatus('Workflow deployado no Space Hub.', 'success');
                 addChatMessage('assistant', `Workflow "${appState.space.name || 'automar-video-space'}" deployado.`);
+            });
+
+            automationIngestBtn.addEventListener('click', async () => {
+                automationIngestBtn.disabled = true;
+                try {
+                    await runAutomationIngest();
+                } catch (error) {
+                    setAutomationInfraStatus(error.message || 'Falha ao rodar ingest.', 'error');
+                    appendAutomationInfraLog(error.message || 'Falha no ingest.', 'error');
+                } finally {
+                    automationIngestBtn.disabled = false;
+                }
+            });
+
+            automationLoadTemplatesBtn.addEventListener('click', async () => {
+                automationLoadTemplatesBtn.disabled = true;
+                try {
+                    await loadWorkflowTemplatesFromBackend();
+                } catch (error) {
+                    setAutomationInfraStatus(error.message || 'Falha ao carregar templates.', 'error');
+                    appendAutomationInfraLog(error.message || 'Falha ao carregar templates.', 'error');
+                } finally {
+                    automationLoadTemplatesBtn.disabled = false;
+                }
+            });
+
+            automationCreatePatchBtn.addEventListener('click', async () => {
+                automationCreatePatchBtn.disabled = true;
+                try {
+                    await createAutomationFramePatch();
+                } catch (error) {
+                    setAutomationInfraStatus(error.message || 'Falha ao criar patch.', 'error');
+                    appendAutomationInfraLog(error.message || 'Falha ao criar patch.', 'error');
+                } finally {
+                    automationCreatePatchBtn.disabled = false;
+                }
+            });
+
+            automationPlanRenderBtn.addEventListener('click', async () => {
+                automationPlanRenderBtn.disabled = true;
+                try {
+                    await planAutomationIncrementalRender();
+                } catch (error) {
+                    setAutomationInfraStatus(error.message || 'Falha ao planejar render.', 'error');
+                    appendAutomationInfraLog(error.message || 'Falha ao planejar render.', 'error');
+                } finally {
+                    automationPlanRenderBtn.disabled = false;
+                }
             });
 
             timelineCloseBtn.addEventListener('click', () => {
