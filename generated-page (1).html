@@ -2550,7 +2550,8 @@
                 if (appState.sourceKind === 'youtube') {
                     return {
                         youtubeUrl: appState.sourceSrc,
-                        modelId: 'scribe_v1'
+                        modelId: 'scribe_v1',
+                        allowSyntheticFallback: false
                     };
                 }
 
@@ -2662,6 +2663,10 @@
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) {
                     throw new Error(data.error || 'Erro ao transcrever com ElevenLabs.');
+                }
+
+                if (String(data.source || '').trim() === 'youtube_synthetic_fallback') {
+                    throw new Error('O backend retornou fallback sintético (sem áudio/captions reais). Verifique se o vídeo está público e confirme o ID exato da URL.');
                 }
 
                 return data;

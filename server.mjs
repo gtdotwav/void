@@ -188,6 +188,37 @@ function extractYoutubeVideoId(rawUrl) {
   }
 }
 
+function buildYoutubeVideoIdCandidates(videoId) {
+  const original = String(videoId || '').trim();
+  if (!original) return [];
+
+  const seen = new Set();
+  const candidates = [];
+  const push = (value) => {
+    const candidate = String(value || '').trim();
+    if (!candidate || seen.has(candidate)) return;
+    seen.add(candidate);
+    candidates.push(candidate);
+  };
+
+  push(original);
+  if (/[Il]/.test(original)) {
+    push(original.replace(/I/g, 'l'));
+    push(original.replace(/l/g, 'I'));
+  }
+
+  return candidates;
+}
+
+function buildYoutubeVideoIdHint(videoId) {
+  const id = String(videoId || '').trim();
+  if (!id) return '';
+  if (/[Il]/.test(id)) {
+    return `Dica: IDs do YouTube diferenciam maiúsculas e minúsculas. Revise o ID "${id}" (I maiúsculo e l minúsculo são diferentes).`;
+  }
+  return '';
+}
+
 function formatDurationStringFromSeconds(totalSeconds) {
   const safe = Math.max(0, Math.floor(Number(totalSeconds) || 0));
   const hours = Math.floor(safe / 3600);
@@ -2220,14 +2251,7 @@ async function fetchYoutubeCaptionsPayloadFromTrack(track) {
   return parseYoutubeCaptionsPayload(captionsRaw);
 }
 
-async function transcribeFromYoutubeCaptionsFallback(youtubeUrl, languageCode = '') {
-  const videoId = extractYoutubeVideoId(youtubeUrl);
-  if (!videoId) {
-    const error = new Error('Não foi possível extrair videoId para fallback de captions.');
-    error.statusCode = 400;
-    throw error;
-  }
-
+async function transcribeFromYoutubeCaptionsWithVideoId(videoId, languageCode = '') {
   const playerResponse = await fetchYoutubePlayerResponse(videoId);
   let captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
   let captionTrackSource = 'youtube_player_response';
@@ -2311,6 +2335,38 @@ async function transcribeFromYoutubeCaptionsFallback(youtubeUrl, languageCode = 
     model_id: 'youtube_captions',
     warning: 'Fallback automático: áudio do YouTube indisponível no ambiente atual, usando captions do próprio vídeo.'
   };
+}
+
+async function transcribeFromYoutubeCaptionsFallback(youtubeUrl, languageCode = '') {
+  const originalVideoId = extractYoutubeVideoId(youtubeUrl);
+  if (!originalVideoId) {
+    const error = new Error('Não foi possível extrair videoId para fallback de captions.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const candidates = buildYoutubeVideoIdCandidates(originalVideoId);
+  const failures = [];
+
+  for (const candidate of candidates) {
+    try {
+      const payload = await transcribeFromYoutubeCaptionsWithVideoId(candidate, languageCode);
+      if (candidate !== originalVideoId) {
+        payload.warning = `${payload.warning} ID corrigido automaticamente para "${candidate}".`;
+        payload.resolved_video_id = candidate;
+      }
+      return payload;
+    } catch (error) {
+      failures.push(`[${candidate}] ${error?.message || error}`);
+    }
+  }
+
+  const hint = buildYoutubeVideoIdHint(originalVideoId);
+  const error = new Error(
+    `Este vídeo não possui faixa de captions disponível para fallback.${hint ? ` ${hint}` : ''}${failures.length ? ` Detalhes: ${failures.join(' | ')}` : ''}`.trim()
+  );
+  error.statusCode = 422;
+  throw error;
 }
 
 function buildSyntheticWordsFromText({ text, durationSec }) {
@@ -2474,6 +2530,7 @@ async function handleTranscribe(req, res) {
   const requestedMimeType = String(body.mimeType || 'video/mp4');
   const modelId = String(body.modelId || 'scribe_v1');
   const languageCode = body.languageCode ? String(body.languageCode) : '';
+  const allowSyntheticFallback = body.allowSyntheticFallback === true || String(body.allowSyntheticFallback || '').trim().toLowerCase() === 'true';
 
   if (!base64Data && !youtubeUrl) {
     sendJson(res, 400, { error: 'Envie base64Data ou youtubeUrl para transcrição.' });
@@ -2505,17 +2562,32 @@ async function handleTranscribe(req, res) {
         sendJson(res, 200, fallbackPayload);
         return;
       } catch (fallbackError) {
-        try {
-          const syntheticFallback = await transcribeFromYoutubeSyntheticFallback(youtubeUrl);
-          // eslint-disable-next-line no-console
-          console.warn('[transcribe] fallback to synthetic transcript:', fallbackError?.message || fallbackError);
-          sendJson(res, 200, syntheticFallback);
-          return;
-        } catch (syntheticError) {
-          const combined = `${error?.message || 'Falha ao preparar mídia.'} | Fallback captions: ${fallbackError?.message || fallbackError} | Fallback sintético: ${syntheticError?.message || syntheticError}`;
-          sendJson(res, syntheticError?.statusCode || fallbackError?.statusCode || error.statusCode || 400, { error: combined });
-          return;
+        if (allowSyntheticFallback) {
+          try {
+            const syntheticFallback = await transcribeFromYoutubeSyntheticFallback(youtubeUrl);
+            // eslint-disable-next-line no-console
+            console.warn('[transcribe] fallback to synthetic transcript:', fallbackError?.message || fallbackError);
+            sendJson(res, 200, syntheticFallback);
+            return;
+          } catch (syntheticError) {
+            const combined = `${error?.message || 'Falha ao preparar mídia.'} | Fallback captions: ${fallbackError?.message || fallbackError} | Fallback sintético: ${syntheticError?.message || syntheticError}`;
+            sendJson(res, syntheticError?.statusCode || fallbackError?.statusCode || error.statusCode || 400, { error: combined });
+            return;
+          }
         }
+
+        const videoIdHint = buildYoutubeVideoIdHint(extractYoutubeVideoId(youtubeUrl));
+        const combined = `${error?.message || 'Falha ao preparar mídia.'} | Fallback captions: ${fallbackError?.message || fallbackError}`;
+        const message = [
+          'Não foi possível obter áudio/captions reais deste vídeo no ambiente atual.',
+          videoIdHint,
+          `Detalhes: ${combined}`
+        ].filter(Boolean).join(' ');
+        sendJson(res, fallbackError?.statusCode || error.statusCode || 422, {
+          error: message,
+          source: 'youtube_transcription_unavailable'
+        });
+        return;
       }
     }
     sendJson(res, error.statusCode || 400, { error: error.message || 'Falha ao preparar mídia para transcrição.' });
