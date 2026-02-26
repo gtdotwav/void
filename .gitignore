@@ -6,3 +6,4 @@
 .env.production.local
 node_modules/
 *.log
+.vercel
