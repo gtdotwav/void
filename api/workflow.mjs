@@ -1,4 +1,4 @@
-import { handleAutomationSnapshot, sendJson, setCorsHeaders } from '../../server.mjs';
+import { handleWorkflowApi, sendJson, setCorsHeaders } from '../server.mjs';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -8,13 +8,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (req.method !== 'GET') {
-    sendJson(res, 405, { error: 'Method Not Allowed' });
-    return;
-  }
-
   try {
-    await handleAutomationSnapshot(req, res);
+    await handleWorkflowApi(req, res);
   } catch (error) {
     sendJson(res, 500, { error: error?.message || 'Erro interno no servidor.' });
   }

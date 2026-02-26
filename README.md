@@ -54,15 +54,16 @@ Campos mais importantes:
 
 ## Novas APIs de automacao
 
-- `POST /api/automation/ingest` -> analise de ingestao (cuts, viral, emocao, energia, CTA)
-- `POST /api/automation/frame/patch` -> cria AI patch layer de frame
-- `POST /api/automation/motion/reconstruct` -> plano de reconstrucao de motion
-- `POST /api/automation/render/incremental` -> plano de render diferencial
-- `GET /api/workflow/templates` -> marketplace de templates de workflow
-- `POST /api/workflow/templates/apply` -> aplica template em workflow
-- `GET /api/keys/list` -> lista keys salvas no vault
-- `POST /api/keys/save` -> salva key criptografada por provider
-- `POST /api/keys/remove` -> remove key do vault
+- `POST /api/automation` com `action=ingest` -> analise de ingestao (cuts, viral, emocao, energia, CTA)
+- `POST /api/automation` com `action=frame_patch` -> cria AI patch layer de frame
+- `POST /api/automation` com `action=motion_reconstruct` -> plano de reconstrucao de motion
+- `POST /api/automation` com `action=render_incremental` -> plano de render diferencial
+- `GET /api/automation` -> snapshot do estado da automacao
+- `GET /api/workflow` -> marketplace de templates de workflow
+- `POST /api/workflow` com `action=apply_template` -> aplica template em workflow
+- `GET /api/keys` -> lista keys salvas no vault
+- `POST /api/keys` com `action=save_key` -> salva key criptografada por provider
+- `POST /api/keys` com `action=remove_key` -> remove key do vault
 
 ## Key Vault (criptografia)
 

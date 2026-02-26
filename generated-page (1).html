@@ -1643,31 +1643,31 @@
             }
 
             function resolveAutomationIngestApiUrl() {
-                return `${resolveBackendApiBase()}/api/automation/ingest`;
+                return `${resolveBackendApiBase()}/api/automation`;
             }
 
             function resolveAutomationFramePatchApiUrl() {
-                return `${resolveBackendApiBase()}/api/automation/frame/patch`;
+                return `${resolveBackendApiBase()}/api/automation`;
             }
 
             function resolveAutomationMotionApiUrl() {
-                return `${resolveBackendApiBase()}/api/automation/motion/reconstruct`;
+                return `${resolveBackendApiBase()}/api/automation`;
             }
 
             function resolveAutomationRenderApiUrl() {
-                return `${resolveBackendApiBase()}/api/automation/render/incremental`;
+                return `${resolveBackendApiBase()}/api/automation`;
             }
 
             function resolveWorkflowTemplatesApiUrl() {
-                return `${resolveBackendApiBase()}/api/workflow/templates`;
+                return `${resolveBackendApiBase()}/api/workflow`;
             }
 
             function resolveWorkflowApplyApiUrl() {
-                return `${resolveBackendApiBase()}/api/workflow/templates/apply`;
+                return `${resolveBackendApiBase()}/api/workflow`;
             }
 
             function resolveKeyVaultSaveApiUrl() {
-                return `${resolveBackendApiBase()}/api/keys/save`;
+                return `${resolveBackendApiBase()}/api/keys`;
             }
 
             async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
@@ -2818,6 +2818,7 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
+                                action: 'apply_template',
                                 templateId: templateMatch[1],
                                 workflowName: `${appState.space.name || 'automar-video-space'}-${templateMatch[1]}`
                             })
@@ -2948,6 +2949,7 @@
                 }
 
                 const payload = {
+                    action: 'ingest',
                     source: {
                         kind: appState.sourceKind || 'manual',
                         url: appState.sourceSrc || '',
@@ -3007,6 +3009,7 @@
 
                 const provider = String(automationPatchProviderSelect.value || 'google_nano_banana').trim();
                 const payload = {
+                    action: 'frame_patch',
                     videoId: clip.id,
                     timestampSec: clamp(timestampSec, clip.start, clip.end),
                     fps: 30,
@@ -3033,6 +3036,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        action: 'motion_reconstruct',
                         timestampSec: patch.frame.timestampSec,
                         method: patch.propagation.method,
                         radiusSec: patch.propagation.windowSec
@@ -3047,6 +3051,7 @@
                 const clip = getActiveClip() || appState.clips[0];
                 const fallbackDuration = clip ? Math.max(2, clip.end - clip.start) : 60;
                 const payload = {
+                    action: 'render_incremental',
                     durationSec: Number(appState.duration || fallbackDuration) || fallbackDuration,
                     fps: 30,
                     patchLayers: appState.automation.patchLayers,
@@ -3082,6 +3087,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        action: 'save_key',
                         provider: mapped,
                         apiKey,
                         label: 'ui-default'

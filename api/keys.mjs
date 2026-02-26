@@ -1,4 +1,4 @@
-import { handleProviderKeysList, sendJson, setCorsHeaders } from '../../server.mjs';
+import { handleKeysApi, sendJson, setCorsHeaders } from '../server.mjs';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -8,13 +8,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (req.method !== 'GET') {
-    sendJson(res, 405, { error: 'Method Not Allowed' });
-    return;
-  }
-
   try {
-    await handleProviderKeysList(req, res);
+    await handleKeysApi(req, res);
   } catch (error) {
     sendJson(res, 500, { error: error?.message || 'Erro interno no servidor.' });
   }

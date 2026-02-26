@@ -1364,6 +1364,150 @@ async function handleAutomationSnapshot(_req, res) {
   }
 }
 
+async function handleKeysApi(req, res) {
+  if (req.method === 'GET') {
+    await handleProviderKeysList(req, res);
+    return;
+  }
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'Method Not Allowed' });
+    return;
+  }
+
+  let body;
+  try {
+    body = await readJsonBody(req, 512 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  const action = String(body.action || 'save_key').trim().toLowerCase();
+  if (action === 'remove_key') {
+    const provider = String(body.provider || '').trim();
+    const id = String(body.id || '').trim();
+    const label = String(body.label || '').trim();
+    if (!provider || (!id && !label)) {
+      sendJson(res, 400, { error: 'provider e id/label são obrigatórios para remoção.' });
+      return;
+    }
+    try {
+      const removed = await keyVault.removeProviderKey({ provider, id, label });
+      sendJson(res, 200, { ok: true, ...removed });
+    } catch (error) {
+      sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao remover key.' });
+    }
+    return;
+  }
+
+  const provider = String(body.provider || '').trim();
+  const apiKey = String(body.apiKey || '').trim();
+  const label = String(body.label || 'default').trim();
+  if (!provider || !apiKey) {
+    sendJson(res, 400, { error: 'provider e apiKey são obrigatórios.' });
+    return;
+  }
+  try {
+    const saved = await keyVault.saveProviderKey({ provider, apiKey, label });
+    sendJson(res, 200, { ok: true, key: saved });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao salvar key.' });
+  }
+}
+
+async function handleAutomationApi(req, res) {
+  if (req.method === 'GET') {
+    await handleAutomationSnapshot(req, res);
+    return;
+  }
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'Method Not Allowed' });
+    return;
+  }
+
+  let body;
+  try {
+    body = await readJsonBody(req, 2 * 1024 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  const action = String(body.action || '').trim().toLowerCase();
+  if (action === 'ingest') {
+    const result = await automationEngine.runIngestAnalysis(body).catch((error) => ({ __error: error }));
+    if (result && result.__error) {
+      sendJson(res, result.__error.statusCode || 500, { error: result.__error.message || 'Falha ao analisar ingestão.' });
+      return;
+    }
+    sendJson(res, 200, { ok: true, ...result });
+    return;
+  }
+
+  if (action === 'frame_patch') {
+    const result = await automationEngine.createFramePatch(body).catch((error) => ({ __error: error }));
+    if (result && result.__error) {
+      sendJson(res, result.__error.statusCode || 500, { error: result.__error.message || 'Falha ao criar patch de frame.' });
+      return;
+    }
+    sendJson(res, 200, { ok: true, patch: result });
+    return;
+  }
+
+  if (action === 'motion_reconstruct') {
+    const result = await automationEngine.createMotionReconstruction(body).catch((error) => ({ __error: error }));
+    if (result && result.__error) {
+      sendJson(res, result.__error.statusCode || 500, { error: result.__error.message || 'Falha ao gerar plano de motion reconstruction.' });
+      return;
+    }
+    sendJson(res, 200, { ok: true, motion: result });
+    return;
+  }
+
+  if (action === 'render_incremental') {
+    const result = await automationEngine.createIncrementalRender(body).catch((error) => ({ __error: error }));
+    if (result && result.__error) {
+      sendJson(res, result.__error.statusCode || 500, { error: result.__error.message || 'Falha ao planejar render incremental.' });
+      return;
+    }
+    sendJson(res, 200, { ok: true, renderPlan: result });
+    return;
+  }
+
+  sendJson(res, 400, { error: 'action inválida. Use: ingest, frame_patch, motion_reconstruct, render_incremental.' });
+}
+
+async function handleWorkflowApi(req, res) {
+  if (req.method === 'GET') {
+    await handleWorkflowTemplates(req, res);
+    return;
+  }
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'Method Not Allowed' });
+    return;
+  }
+
+  let body;
+  try {
+    body = await readJsonBody(req, 512 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  const action = String(body.action || 'apply_template').trim().toLowerCase();
+  if (action !== 'apply_template') {
+    sendJson(res, 400, { error: 'action inválida para workflow. Use: apply_template.' });
+    return;
+  }
+  try {
+    const workflow = await automationEngine.applyTemplate(body);
+    sendJson(res, 200, { ok: true, workflow });
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Falha ao aplicar template.' });
+  }
+}
+
 async function handleHealth(req, res) {
   if (req.method !== 'GET') {
     sendJson(res, 405, { error: 'Method Not Allowed' });
@@ -1410,6 +1554,21 @@ async function handleRequest(req, res) {
 
   if (pathname === '/health' || pathname === '/api/health') {
     await handleHealth(req, res);
+    return;
+  }
+
+  if (pathname === '/api/keys') {
+    await handleKeysApi(req, res);
+    return;
+  }
+
+  if (pathname === '/api/automation') {
+    await handleAutomationApi(req, res);
+    return;
+  }
+
+  if (pathname === '/api/workflow') {
+    await handleWorkflowApi(req, res);
     return;
   }
 
@@ -1613,13 +1772,16 @@ export {
   handleProviderKeysList,
   handleProviderKeysSave,
   handleProviderKeysRemove,
+  handleKeysApi,
   handleAutomationIngest,
   handleAutomationFramePatch,
   handleAutomationMotionReconstruct,
   handleAutomationIncrementalRender,
   handleAutomationSnapshot,
+  handleAutomationApi,
   handleWorkflowTemplates,
   handleWorkflowTemplateApply,
+  handleWorkflowApi,
   handleRequest,
   startLocalServer
 };
