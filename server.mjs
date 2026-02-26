@@ -838,7 +838,7 @@ async function handleRequest(req, res) {
     return;
   }
 
-  if (pathname === '/health') {
+  if (pathname === '/health' || pathname === '/api/health') {
     await handleHealth(req, res);
     return;
   }
