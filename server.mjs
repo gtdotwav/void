@@ -472,6 +472,93 @@ async function downloadYoutubeAudioViaHttp(youtubeUrl) {
   };
 }
 
+function normalizeMimeType(rawMimeType, fallback = 'audio/mp4') {
+  const cleaned = String(rawMimeType || '').split(';')[0].trim().toLowerCase();
+  return cleaned || fallback;
+}
+
+async function downloadYoutubeAudioViaYoutubei(youtubeUrl) {
+  const videoId = extractYoutubeVideoId(youtubeUrl);
+  if (!videoId) {
+    throw new Error('Não foi possível extrair o videoId da URL do YouTube.');
+  }
+
+  const Innertube = await getYoutubeiModule();
+  const youtube = await Innertube.create({
+    retrieve_player: false,
+    generate_session_locally: true,
+    fail_fast: false
+  });
+
+  const clients = ['IOS', 'ANDROID', 'WEB', 'TV'];
+  const errors = [];
+
+  for (const client of clients) {
+    try {
+      const format = await youtube.getStreamingData(videoId, {
+        client,
+        type: 'audio',
+        quality: 'best',
+        format: 'any'
+      });
+
+      const streamUrl = String(format?.url || '').trim();
+      if (!streamUrl) {
+        throw new Error('youtubei.js retornou formato sem URL de áudio.');
+      }
+
+      const response = await fetch(streamUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': YOUTUBE_FETCH_USER_AGENT,
+          Referer: 'https://www.youtube.com/'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Falha ao baixar áudio via youtubei.js (HTTP ${response.status}).`);
+      }
+
+      const declaredLength = Number(response.headers.get('content-length') || 0);
+      if (Number.isFinite(declaredLength) && declaredLength > MAX_TRANSCRIBE_MEDIA_BYTES) {
+        throw new Error(
+          `Áudio muito grande para transcrição (${Math.round(declaredLength / 1024 / 1024)}MB). ` +
+          'Use um trecho menor do vídeo para manter abaixo de ~140MB.'
+        );
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      if (!buffer.length) {
+        throw new Error('Stream de áudio via youtubei.js retornou vazio.');
+      }
+      if (buffer.length > MAX_TRANSCRIBE_MEDIA_BYTES) {
+        throw new Error(
+          `Áudio muito grande para transcrição (${Math.round(buffer.length / 1024 / 1024)}MB). ` +
+          'Use um trecho menor do vídeo para manter abaixo de ~140MB.'
+        );
+      }
+
+      const formatMime = format?.mime_type || format?.mimeType;
+      const mimeType = normalizeMimeType(formatMime || response.headers.get('content-type') || '', 'audio/mp4');
+      const extension = mimeType.includes('webm') ? 'webm'
+        : mimeType.includes('mpeg') ? 'mp3'
+          : mimeType.includes('ogg') ? 'ogg' : 'm4a';
+
+      return {
+        buffer,
+        fileName: `youtube-${videoId}.${extension}`,
+        mimeType
+      };
+    } catch (error) {
+      errors.push(`${client}: ${error?.message || String(error)}`);
+    }
+  }
+
+  throw new Error(
+    `youtubei.js não conseguiu baixar áudio do YouTube.${errors.length ? ` Detalhes: ${errors.join(' | ')}` : ''}`.trim()
+  );
+}
+
 async function getYtdlCoreModule() {
   if (ytdlCoreModulePromise) return ytdlCoreModulePromise;
   ytdlCoreModulePromise = import('@distube/ytdl-core')
@@ -2007,6 +2094,12 @@ async function downloadYoutubeAudio(youtubeUrl) {
     }
   } else {
     errors.push(`ytdl-core indisponível (${ytdlCoreHealth.detail}).`);
+  }
+
+  try {
+    return await downloadYoutubeAudioViaYoutubei(youtubeUrl);
+  } catch (error) {
+    errors.push(`youtubei.js: ${error?.message || String(error)}`);
   }
 
   try {
