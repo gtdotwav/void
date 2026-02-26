@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "windows": {
+    "openai": [
+      1772118489377
+    ]
+  },
+  "totals": {
+    "openai": {
+      "requests": 3,
+      "estimatedCostUsd": 0,
+      "lastUsedAt": "2026-02-26T15:08:26.700Z"
+    }
+  }
+}

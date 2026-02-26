@@ -1,5 +1,9 @@
 import { handleTranscribe, sendJson, setCorsHeaders } from '../server.mjs';
 
+export const config = {
+  maxDuration: 60
+};
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     setCorsHeaders(res);

@@ -128,6 +128,251 @@
             fill: none;
             opacity: 0.88;
         }
+        .timeline-shell {
+            position: relative;
+            background:
+                radial-gradient(circle at 12% 10%, rgba(200, 255, 0, 0.14), transparent 36%),
+                radial-gradient(circle at 88% 86%, rgba(70, 190, 255, 0.16), transparent 42%),
+                linear-gradient(155deg, rgba(5, 10, 20, 0.98), rgba(6, 12, 24, 0.94));
+            box-shadow:
+                0 45px 90px rgba(0, 0, 0, 0.7),
+                inset 0 0 0 1px rgba(176, 225, 70, 0.18),
+                inset 0 0 38px rgba(145, 218, 44, 0.12);
+        }
+        .timeline-shell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                radial-gradient(circle at 20% 22%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px),
+                radial-gradient(circle at 78% 30%, rgba(206, 255, 102, 0.22) 0 1px, transparent 3px),
+                radial-gradient(circle at 64% 73%, rgba(118, 223, 255, 0.2) 0 1px, transparent 3px),
+                radial-gradient(circle at 38% 84%, rgba(255, 255, 255, 0.14) 0 1px, transparent 2px);
+            opacity: 0.35;
+        }
+        .timeline-shell::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            pointer-events: none;
+            border-radius: 28px;
+            border: 1px solid rgba(180, 250, 70, 0.14);
+            box-shadow: inset 0 0 40px rgba(200, 255, 0, 0.08);
+        }
+        .timeline-shell-inner {
+            position: relative;
+            z-index: 1;
+        }
+        .timeline-glass {
+            border: 1px solid rgba(176, 225, 70, 0.16);
+            background: linear-gradient(160deg, rgba(7, 12, 24, 0.86), rgba(2, 5, 12, 0.76));
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 18px 44px rgba(0, 0, 0, 0.44);
+            backdrop-filter: blur(12px);
+        }
+        .timeline-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.62rem;
+            border: 1px solid rgba(188, 255, 72, 0.4);
+            border-radius: 0.72rem;
+            background: rgba(154, 255, 73, 0.08);
+            color: #cfff6d;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 0.66rem;
+            font-weight: 700;
+        }
+        .timeline-chip-btn {
+            border: 1px solid rgba(188, 255, 72, 0.42);
+            background: rgba(142, 225, 60, 0.12);
+            color: #d4ff77;
+            box-shadow: inset 0 0 14px rgba(154, 255, 73, 0.13);
+        }
+        .timeline-chip-btn:hover {
+            background: rgba(188, 255, 72, 0.22);
+        }
+        .timeline-white-btn {
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            background: rgba(255, 255, 255, 0.95);
+            color: #111827;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.36);
+        }
+        .timeline-ruler {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 0.25rem;
+            color: rgba(255, 255, 255, 0.48);
+            font-size: 0.68rem;
+            margin-bottom: 0.45rem;
+            padding-left: 76px;
+        }
+        .timeline-track-grid {
+            position: relative;
+            border: 1px solid rgba(176, 225, 70, 0.16);
+            border-radius: 14px;
+            overflow: hidden;
+            background:
+                linear-gradient(180deg, rgba(8, 16, 32, 0.82), rgba(3, 8, 18, 0.92)),
+                repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 0, rgba(255, 255, 255, 0.05) 1px, transparent 1px, transparent 64px),
+                repeating-linear-gradient(to right, rgba(255, 255, 255, 0.06) 0, rgba(255, 255, 255, 0.06) 1px, transparent 1px, transparent 56px);
+            box-shadow: inset 0 0 26px rgba(152, 255, 67, 0.08);
+        }
+        .timeline-track-row {
+            display: grid;
+            grid-template-columns: 78px minmax(0, 1fr);
+            align-items: center;
+            min-height: 64px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .timeline-track-row:last-child {
+            border-bottom: 0;
+        }
+        .timeline-track-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.03em;
+            color: rgba(230, 241, 255, 0.76);
+            padding-left: 0.6rem;
+        }
+        .timeline-row-lane {
+            position: relative;
+            height: 100%;
+            padding: 0.45rem 0.65rem;
+        }
+        .timeline-clip-pill {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 10px;
+            border: 1px solid rgba(188, 255, 72, 0.5);
+            background: linear-gradient(145deg, rgba(150, 255, 70, 0.24), rgba(87, 150, 50, 0.5));
+            color: rgba(247, 255, 226, 0.95);
+            font-size: 0.92rem;
+            letter-spacing: 0.02em;
+            padding: 0.52rem 0.82rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: inset 0 0 26px rgba(200, 255, 80, 0.22), 0 0 24px rgba(200, 255, 80, 0.18);
+        }
+        .timeline-clip-pill.blue {
+            border-color: rgba(100, 214, 255, 0.44);
+            background: linear-gradient(145deg, rgba(58, 114, 214, 0.32), rgba(22, 56, 122, 0.62));
+            box-shadow: inset 0 0 22px rgba(94, 194, 255, 0.18), 0 0 20px rgba(50, 165, 255, 0.14);
+        }
+        .timeline-clip-pill.purple {
+            border-color: rgba(208, 148, 255, 0.42);
+            background: linear-gradient(145deg, rgba(164, 94, 242, 0.33), rgba(84, 35, 140, 0.66));
+            box-shadow: inset 0 0 22px rgba(205, 130, 255, 0.19), 0 0 20px rgba(197, 95, 255, 0.15);
+        }
+        .timeline-wave {
+            position: absolute;
+            right: 2%;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 14px;
+            width: 36%;
+            border-radius: 999px;
+            background: repeating-linear-gradient(to right, rgba(160, 235, 255, 0.8) 0 2px, transparent 2px 6px);
+            opacity: 0.72;
+        }
+        .timeline-playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, rgba(220, 255, 150, 0.96), rgba(160, 255, 66, 0.96));
+            box-shadow: 0 0 22px rgba(188, 255, 74, 0.85);
+            pointer-events: none;
+            transform: translateX(-1px);
+            left: 0;
+            transition: left 120ms linear;
+            z-index: 20;
+        }
+        .timeline-playhead::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            background: #d6ff7b;
+            box-shadow: 0 0 16px rgba(188, 255, 72, 0.8);
+        }
+        .timeline-playhead-tag {
+            position: absolute;
+            bottom: -23px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #d2ff70;
+            font-size: 0.78rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-shadow: 0 0 12px rgba(188, 255, 72, 0.65);
+            white-space: nowrap;
+        }
+        .timeline-side-panel {
+            border: 1px solid rgba(176, 225, 70, 0.18);
+            border-radius: 16px;
+            background: linear-gradient(170deg, rgba(10, 18, 32, 0.87), rgba(3, 8, 18, 0.88));
+            box-shadow: inset 0 0 20px rgba(186, 255, 72, 0.08);
+        }
+        .timeline-tab-strip {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.2rem;
+            border-bottom: 1px solid rgba(176, 225, 70, 0.14);
+            padding-bottom: 0.6rem;
+            margin-bottom: 0.8rem;
+        }
+        .timeline-tab {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.54);
+            font-size: 0.76rem;
+        }
+        .timeline-tab.active {
+            color: #d8ff7f;
+            text-shadow: 0 0 12px rgba(188, 255, 72, 0.45);
+        }
+        .timeline-toggle {
+            border: 1px solid rgba(176, 225, 70, 0.16);
+            border-radius: 12px;
+            background: rgba(1, 4, 10, 0.55);
+            padding: 0.55rem 0.65rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: rgba(235, 246, 255, 0.84);
+            font-size: 0.88rem;
+        }
+        .timeline-toggle-dot {
+            width: 30px;
+            height: 17px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(137, 229, 55, 0.4), rgba(188, 255, 72, 0.98));
+            position: relative;
+            box-shadow: 0 0 12px rgba(188, 255, 72, 0.45);
+        }
+        .timeline-toggle-dot::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 13px;
+            height: 13px;
+            border-radius: 999px;
+            background: #101419;
+        }
+        .timeline-soft-label {
+            font-size: 0.66rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.42);
+        }
     </style>
 </head>
 <body class="font-body relative min-h-screen">
@@ -276,7 +521,7 @@
                             <div class="flex flex-wrap gap-2">
                                 <button type="button" id="guideFocusSourceBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors">Ir para Fonte</button>
                                 <button type="button" id="guideOpenEditorBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Abrir 1º Clip</button>
-                                <button type="button" id="guideTranscribeBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Transcrever</button>
+                                <button type="button" id="guideTranscribeBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Reajustar</button>
                                 <button type="button" id="guideExportBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Exportar</button>
                                 <button type="button" id="guidePackBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Gerar Pack</button>
                                 <button type="button" id="guideDiagnoseBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors">Diagnosticar</button>
@@ -298,10 +543,23 @@
                         <p id="sourceSummary" class="text-xs text-white/40 mt-1">Source: No video loaded yet</p>
                     </div>
                     
-                    <div class="flex items-center gap-2 bg-white/5 border border-white/10 p-1 rounded-lg backdrop-blur-md" id="filterContainer">
+                    <div class="flex flex-wrap items-center gap-2 bg-white/5 border border-white/10 p-1 rounded-lg backdrop-blur-md" id="filterContainer">
                         <button class="filter-btn active px-3 py-1.5 rounded bg-white/10 text-white text-xs font-medium shadow-sm" data-filter="all">All (3)</button>
                         <button class="filter-btn px-3 py-1.5 rounded hover:bg-white/5 text-white/50 hover:text-white transition-colors text-xs font-medium" data-filter="highscore">High Score</button>
                         <button class="filter-btn px-3 py-1.5 rounded hover:bg-white/5 text-white/50 hover:text-white transition-colors text-xs font-medium" data-filter="drafts">Drafts</button>
+                        <div class="h-5 w-px bg-white/10 mx-1 hidden sm:block"></div>
+                        <label class="flex items-center gap-1 text-[11px] text-white/50">
+                            <span>Tema</span>
+                            <select id="themeFilterSelect" class="bg-black/60 border border-white/15 rounded px-2 py-1 text-[11px] text-white/80 outline-none focus:border-accent/40">
+                                <option value="all">Todos</option>
+                            </select>
+                        </label>
+                        <label class="flex items-center gap-1 text-[11px] text-white/50">
+                            <span>Assunto</span>
+                            <select id="subjectFilterSelect" class="bg-black/60 border border-white/15 rounded px-2 py-1 text-[11px] text-white/80 outline-none focus:border-accent/40">
+                                <option value="all">Todos</option>
+                            </select>
+                        </label>
                     </div>
                 </div>
 
@@ -526,7 +784,7 @@
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <button id="transcribeCaptionsBtn" class="text-xs text-accent border border-accent/30 hover:bg-accent hover:text-bg px-3 py-1.5 rounded transition-colors flex items-center gap-1 font-medium">
-                                            <iconify-icon icon="solar:document-text-linear"></iconify-icon> Transcrever
+                                            <iconify-icon icon="solar:document-text-linear"></iconify-icon> Reajustar
                                         </button>
                                         <button class="text-xs text-accent border border-accent/30 hover:bg-accent hover:text-bg px-3 py-1.5 rounded transition-colors flex items-center gap-1 font-medium">
                                             <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> AI Polish
@@ -535,7 +793,7 @@
                                 </div>
                                 <div class="px-4 py-2 border-b border-white/5 bg-black/30">
                                     <p id="transcribeStatus" class="text-xs text-white/50 min-h-[1rem]">
-                                        Transcrição ElevenLabs pronta (inclui link YouTube com download automático no backend).
+                                        Envie um link para transcrição automática. Use Reajustar para atualizar cortes e legendas.
                                     </p>
                                 </div>
 
@@ -926,7 +1184,9 @@
                         </label>
                         <div class="grid grid-cols-2 gap-2">
                             <button id="automationCreatePatchBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Create patch</button>
+                            <button id="automationExecutePatchBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Execute patch</button>
                             <button id="automationPlanRenderBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Plan render</button>
+                            <button id="automationExecuteRenderBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/20 text-accent/90 hover:bg-accent hover:text-bg transition-colors">Execute render</button>
                         </div>
                         <p id="automationInfraStatus" class="text-[11px] text-white/40 min-h-[1rem]">Pronto para ingest/frame patch/render incremental.</p>
                         <div id="automationInfraLog" class="max-h-[128px] overflow-auto custom-scrollbar rounded-lg border border-white/10 bg-black/35 p-2 space-y-1 text-[11px] text-white/70"></div>
@@ -936,88 +1196,192 @@
         </div>
     </div>
 
-    <div id="timelineModal" class="hidden fixed inset-0 z-[230] items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md">
-        <div class="w-full max-w-[1180px] rounded-2xl border border-white/10 bg-[#090b10] shadow-2xl overflow-hidden">
-            <div class="px-4 py-3 border-b border-white/10 bg-black/40 flex items-center justify-between">
-                <div>
-                    <p class="text-[11px] text-white/40 uppercase tracking-widest">Advanced Timeline Editor</p>
-                    <h3 id="timelineClipTitle" class="text-base text-white font-medium">Clip</h3>
+    <div id="timelineModal" class="hidden fixed inset-0 z-[230] items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md">
+        <div class="timeline-shell w-full max-w-[1380px] rounded-[28px] border border-lime-300/20 overflow-hidden">
+            <div class="timeline-shell-inner p-3 sm:p-4">
+                <div class="timeline-glass rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <span class="timeline-badge">
+                            <iconify-icon icon="solar:video-library-line-duotone" width="13" height="13"></iconify-icon>
+                            Advanced Editor
+                        </span>
+                        <h3 id="timelineClipTitle" class="text-base sm:text-[1.35rem] text-white tracking-tight truncate">Project Timeline</h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="timelineOpenEditorBtn" class="timeline-chip-btn px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors flex items-center gap-1.5">
+                            <iconify-icon icon="solar:add-square-linear" width="15" height="15"></iconify-icon>
+                            Timeline +
+                        </button>
+                        <button id="timelinePlayBtn" class="timeline-white-btn px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-transform hover:scale-[1.03] flex items-center gap-1.5">
+                            <iconify-icon icon="solar:play-line-duotone" width="15" height="15"></iconify-icon>
+                            Play / Pause
+                        </button>
+                        <button id="timelineCloseBtn" class="w-9 h-9 rounded-xl border border-white/20 text-white/75 hover:text-white hover:border-white/45 transition-colors flex items-center justify-center">
+                            <iconify-icon icon="solar:close-circle-linear" width="19" height="19"></iconify-icon>
+                        </button>
+                    </div>
                 </div>
-                <button id="timelineCloseBtn" class="w-8 h-8 rounded-lg border border-white/15 text-white/70 hover:text-white hover:border-white/30 transition-colors">
-                    <iconify-icon icon="solar:close-circle-linear" width="18" height="18"></iconify-icon>
-                </button>
-            </div>
 
-            <div class="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-                <div class="lg:col-span-8 space-y-4">
-                    <div class="rounded-xl border border-white/10 bg-black/35 p-4">
-                        <div class="flex items-center justify-between text-xs text-white/60 mb-2">
-                            <span>Timeline</span>
-                            <span id="timelineStatus" class="text-white/40 min-h-[1rem]"></span>
+                <div class="mt-3 timeline-glass rounded-2xl px-3 py-2 sm:px-4 sm:py-3">
+                    <div class="flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] sm:text-[12px]">
+                        <div class="flex items-center gap-1.5 text-white/70">
+                            <span class="timeline-soft-label">Start</span>
+                            <span id="timelineStartValue" class="font-mono text-white px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
                         </div>
-                        <input id="timelineScrubber" type="range" min="0" max="1000" value="0" class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
-                        <div class="mt-3 grid grid-cols-3 gap-2 text-[11px]">
-                            <div class="rounded-lg border border-white/10 p-2 bg-black/40">
-                                <p class="text-white/40">Start</p>
-                                <p id="timelineStartValue" class="text-white font-mono mt-1">0:00</p>
+                        <div class="flex items-center gap-1.5 text-white/70">
+                            <span class="timeline-soft-label">Playhead</span>
+                            <span id="timelinePlayheadValue" class="font-mono text-accent px-2 py-1 rounded-md border border-accent/30 bg-accent/10">0:00</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-white/70">
+                            <span class="timeline-soft-label">End</span>
+                            <span id="timelineEndValue" class="font-mono text-white px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-white/70">
+                            <span class="timeline-soft-label">Duration</span>
+                            <span id="timelineDurationValue" class="font-mono text-white/90 px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
+                        </div>
+                        <span id="timelineStatus" class="text-white/40 min-h-[1rem]"></span>
+                    </div>
+                </div>
+
+                <div class="mt-3 grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-4">
+                    <div class="xl:col-span-9 timeline-glass rounded-2xl p-3 sm:p-4">
+                        <div class="timeline-ruler">
+                            <span>00:00</span>
+                            <span>00:10</span>
+                            <span>00:20</span>
+                            <span>00:30</span>
+                            <span>00:40</span>
+                            <span>00:50</span>
+                        </div>
+
+                        <div class="timeline-track-grid">
+                            <div id="timelinePlayheadNeedle" class="timeline-playhead">
+                                <span id="timelinePlayheadTag" class="timeline-playhead-tag">0:00</span>
                             </div>
-                            <div class="rounded-lg border border-accent/30 p-2 bg-accent/10">
-                                <p class="text-white/40">Playhead</p>
-                                <p id="timelinePlayheadValue" class="text-accent font-mono mt-1">0:00</p>
+
+                            <div class="timeline-track-row">
+                                <div class="timeline-track-label">
+                                    <iconify-icon icon="solar:video-frame-play-horizontal-linear" width="14" height="14"></iconify-icon>
+                                    V1
+                                </div>
+                                <div class="timeline-row-lane">
+                                    <div class="timeline-clip-pill" style="left:2%; width:46%;">Main Clip 01</div>
+                                    <div class="timeline-clip-pill" style="left:49%; width:40%;">Main Clip 02</div>
+                                </div>
                             </div>
-                            <div class="rounded-lg border border-white/10 p-2 bg-black/40">
-                                <p class="text-white/40">End</p>
-                                <p id="timelineEndValue" class="text-white font-mono mt-1">0:00</p>
+
+                            <div class="timeline-track-row">
+                                <div class="timeline-track-label">
+                                    <iconify-icon icon="solar:video-frame-play-horizontal-linear" width="14" height="14"></iconify-icon>
+                                    V2
+                                </div>
+                                <div class="timeline-row-lane">
+                                    <div class="timeline-clip-pill blue" style="left:2%; width:34%;">B-Roll Clip 1</div>
+                                    <div class="timeline-clip-pill" style="left:37%; width:27%;">B-Roll Clip 1B</div>
+                                    <div class="timeline-wave"></div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-track-row">
+                                <div class="timeline-track-label">
+                                    <iconify-icon icon="solar:music-note-2-line-duotone" width="14" height="14"></iconify-icon>
+                                    Audio 1
+                                </div>
+                                <div class="timeline-row-lane">
+                                    <div class="timeline-clip-pill purple" style="left:2%; width:43%;">Voiceover 01</div>
+                                    <div class="timeline-clip-pill purple" style="left:47%; width:43%;">Background Music</div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-track-row">
+                                <div class="timeline-track-label">
+                                    <iconify-icon icon="solar:soundwave-linear" width="14" height="14"></iconify-icon>
+                                    SFX
+                                </div>
+                                <div class="timeline-row-lane">
+                                    <div class="timeline-clip-pill blue" style="left:4%; width:30%;">Sound FX Clip</div>
+                                    <div class="timeline-clip-pill blue" style="left:58%; width:28%;">Impact FX</div>
+                                </div>
                             </div>
                         </div>
+
+                        <div class="mt-3">
+                            <input id="timelineScrubber" type="range" min="0" max="1000" value="0" class="custom-range w-full h-1.5 bg-white/10 rounded-full appearance-none outline-none">
+                        </div>
+
                         <div class="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            <button id="timelinePlayBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white hover:border-accent/40 hover:text-accent transition-colors">Play/Pause</button>
-                            <button id="timelineSetInBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Set IN</button>
-                            <button id="timelineSetOutBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Set OUT</button>
-                            <button id="timelineCutLeftBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-white/40 hover:text-white transition-colors">Cut Left</button>
-                            <button id="timelineCutRightBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-white/40 hover:text-white transition-colors">Cut Right</button>
+                            <button id="timelineSetInBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Set IN</button>
+                            <button id="timelineSetOutBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Set OUT</button>
+                            <button id="timelineCutLeftBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Cut Left</button>
+                            <button id="timelineCutRightBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Cut Right</button>
+                            <button id="timelineResetBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Reset Cut</button>
                         </div>
                     </div>
 
-                    <div class="rounded-xl border border-white/10 bg-black/35 p-4">
-                        <p class="text-xs text-white/60 mb-3">Crop</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <label class="text-[11px] text-white/60">Zoom
-                                <input id="timelineCropZoom" type="range" min="100" max="180" value="100" class="custom-range mt-2 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
-                                <span id="timelineCropZoomValue" class="text-white/60">100%</span>
-                            </label>
-                            <label class="text-[11px] text-white/60">X Offset
-                                <input id="timelineCropX" type="range" min="-40" max="40" value="0" class="custom-range mt-2 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
-                                <span id="timelineCropXValue" class="text-white/60">0%</span>
-                            </label>
-                            <label class="text-[11px] text-white/60">Y Offset
-                                <input id="timelineCropY" type="range" min="-40" max="40" value="0" class="custom-range mt-2 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
-                                <span id="timelineCropYValue" class="text-white/60">0%</span>
-                            </label>
+                    <aside class="xl:col-span-3 timeline-side-panel p-3 sm:p-4">
+                        <div class="timeline-tab-strip">
+                            <span class="timeline-tab active">Captions</span>
+                            <span class="timeline-tab">Audio</span>
+                            <span class="timeline-tab">Effects</span>
+                            <span class="timeline-tab active">AI Polish</span>
                         </div>
-                    </div>
-                </div>
 
-                <div class="lg:col-span-4 space-y-4">
-                    <div class="rounded-xl border border-white/10 bg-black/35 p-4">
-                        <p class="text-xs text-white/60 mb-3">Add / Paste</p>
-                        <input id="timelineOverlayTextInput" type="text" placeholder="Texto para sobreposição..." class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent/50">
-                        <div class="mt-2 grid grid-cols-2 gap-2">
-                            <button id="timelineAddOverlayBtn" class="px-3 py-2 text-xs rounded-lg bg-accent/15 border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Add Text</button>
-                            <button id="timelineResetBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-white/40 hover:text-white transition-colors">Reset Cut</button>
+                        <div class="space-y-2.5">
+                            <div class="timeline-toggle">
+                                <span>Transcribe</span>
+                                <span class="timeline-toggle-dot" aria-hidden="true"></span>
+                            </div>
+                            <div class="timeline-toggle">
+                                <span>Generate B-Roll</span>
+                                <span class="timeline-toggle-dot" aria-hidden="true"></span>
+                            </div>
+                            <div class="timeline-toggle">
+                                <span>Enhance Audio</span>
+                                <span class="timeline-toggle-dot" aria-hidden="true"></span>
+                            </div>
+                            <div class="timeline-toggle">
+                                <span>Auto Cut Silence</span>
+                                <span class="timeline-toggle-dot" aria-hidden="true"></span>
+                            </div>
                         </div>
-                        <div class="mt-2 grid grid-cols-2 gap-2">
-                            <button id="timelineCopyStyleBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-white/40 hover:text-white transition-colors">Copy Style</button>
-                            <button id="timelinePasteStyleBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-white/40 hover:text-white transition-colors">Paste Style</button>
+
+                        <div class="mt-3 rounded-xl border border-white/10 bg-black/35 p-3">
+                            <p class="text-xs text-white/70 mb-2">Crop</p>
+                            <div class="space-y-2.5 text-[11px] text-white/60">
+                                <label class="block">Zoom
+                                    <input id="timelineCropZoom" type="range" min="100" max="180" value="100" class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
+                                    <span id="timelineCropZoomValue" class="text-white/70">100%</span>
+                                </label>
+                                <label class="block">X Offset
+                                    <input id="timelineCropX" type="range" min="-40" max="40" value="0" class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
+                                    <span id="timelineCropXValue" class="text-white/70">0%</span>
+                                </label>
+                                <label class="block">Y Offset
+                                    <input id="timelineCropY" type="range" min="-40" max="40" value="0" class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
+                                    <span id="timelineCropYValue" class="text-white/70">0%</span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="rounded-xl border border-white/10 bg-black/35 p-4">
-                        <p class="text-xs text-white/60 mb-2">Overlay items</p>
-                        <div id="timelineOverlayList" class="max-h-[230px] overflow-auto custom-scrollbar space-y-2 text-xs"></div>
-                    </div>
+                        <div class="mt-3 rounded-xl border border-white/10 bg-black/35 p-3">
+                            <p class="text-xs text-white/70 mb-2">Add / Paste</p>
+                            <input id="timelineOverlayTextInput" type="text" placeholder="Texto para sobreposição..." class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent/50">
+                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                <button id="timelineAddOverlayBtn" class="px-3 py-2 text-xs rounded-lg bg-accent/15 border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Add Text</button>
+                                <button id="timelineCopyStyleBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Copy Style</button>
+                            </div>
+                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                <button id="timelinePasteStyleBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Paste Style</button>
+                                <button class="px-3 py-2 text-xs rounded-lg border border-accent/25 text-accent/90 bg-accent/10">AI Process Ready</button>
+                            </div>
+                        </div>
 
-                    <button id="timelineOpenEditorBtn" class="w-full px-3 py-2.5 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Open main editor section</button>
+                        <div class="mt-3 rounded-xl border border-white/10 bg-black/35 p-3">
+                            <p class="text-xs text-white/70 mb-2">Overlay items</p>
+                            <div id="timelineOverlayList" class="max-h-[200px] overflow-auto custom-scrollbar space-y-2 text-xs"></div>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </div>
@@ -1124,6 +1488,8 @@
             const transcribeCaptionsBtn = document.getElementById('transcribeCaptionsBtn');
             const transcribeStatus = document.getElementById('transcribeStatus');
             const filterBtns = Array.from(document.querySelectorAll('.filter-btn'));
+            const themeFilterSelect = document.getElementById('themeFilterSelect');
+            const subjectFilterSelect = document.getElementById('subjectFilterSelect');
             const editorTitle = document.getElementById('editorTitle');
             const editorVideo = document.getElementById('editorVideo');
             const editorYoutubeWrap = document.getElementById('editorYoutubeWrap');
@@ -1224,7 +1590,9 @@
             const automationPatchInstructionInput = document.getElementById('automationPatchInstructionInput');
             const automationPatchProviderSelect = document.getElementById('automationPatchProviderSelect');
             const automationCreatePatchBtn = document.getElementById('automationCreatePatchBtn');
+            const automationExecutePatchBtn = document.getElementById('automationExecutePatchBtn');
             const automationPlanRenderBtn = document.getElementById('automationPlanRenderBtn');
+            const automationExecuteRenderBtn = document.getElementById('automationExecuteRenderBtn');
             const automationInfraStatus = document.getElementById('automationInfraStatus');
             const automationInfraLog = document.getElementById('automationInfraLog');
             const automarNodeButtons = Array.from(document.querySelectorAll('.automar-node'));
@@ -1237,6 +1605,9 @@
             const timelineStartValue = document.getElementById('timelineStartValue');
             const timelinePlayheadValue = document.getElementById('timelinePlayheadValue');
             const timelineEndValue = document.getElementById('timelineEndValue');
+            const timelineDurationValue = document.getElementById('timelineDurationValue');
+            const timelinePlayheadNeedle = document.getElementById('timelinePlayheadNeedle');
+            const timelinePlayheadTag = document.getElementById('timelinePlayheadTag');
             const timelinePlayBtn = document.getElementById('timelinePlayBtn');
             const timelineSetInBtn = document.getElementById('timelineSetInBtn');
             const timelineSetOutBtn = document.getElementById('timelineSetOutBtn');
@@ -1266,7 +1637,11 @@
                 { title: 'Problem and Turning Point', hook: 'Hook: Problem' },
                 { title: 'Lesson With Example', hook: 'Hook: Insight' },
                 { title: 'Final Takeaway Push', hook: 'Hook: CTA' },
-                { title: 'Quick Story Arc', hook: 'Hook: Story' }
+                { title: 'Quick Story Arc', hook: 'Hook: Story' },
+                { title: 'Counterpoint Breakdown', hook: 'Hook: Debate' },
+                { title: 'Myth Vs Reality', hook: 'Hook: Myth Bust' },
+                { title: 'Fast Tactical Tutorial', hook: 'Hook: Tutorial' },
+                { title: 'Data Point Shock', hook: 'Hook: Stats' }
             ];
 
             const appState = {
@@ -1286,6 +1661,10 @@
                 activeClipId: null,
                 activeCaptionId: null,
                 activeFilter: 'all',
+                activeThemeFilter: 'all',
+                activeSubjectFilter: 'all',
+                transcriptWords: [],
+                transcribeInFlight: false,
                 elevenAgentId: DEFAULT_ELEVEN_AGENT_ID,
                 style: {
                     fontFamily: 'body',
@@ -1317,7 +1696,9 @@
                     templates: [],
                     ingest: null,
                     patchLayers: [],
-                    renderPlan: null
+                    renderPlan: null,
+                    lastPatchResult: null,
+                    lastRenderResult: null
                 },
                 timeline: {
                     open: false,
@@ -1341,8 +1722,11 @@
                     directTranscribeReady: false,
                     youtubeTranscribeReady: false,
                     imageGenerationReady: false,
+                    videoEditReady: false,
                     ytDlpAvailable: false,
                     ytDlpBin: '',
+                    ffmpegAvailable: false,
+                    ffmpegBin: '',
                     runtime: '',
                     healthUrl: '',
                     keyVaultReady: false,
@@ -1712,6 +2096,7 @@
                 lines.push(appState.backend.hasElevenLabsKey ? 'ElevenLabs key: OK' : 'ElevenLabs key: ausente');
                 lines.push(appState.backend.keyVaultReady ? 'Key Vault: pronto' : 'Key Vault: pendente');
                 lines.push(appState.backend.imageGenerationReady ? 'Complement image API: pronta' : 'Complement image API: usando key local da aba');
+                lines.push(appState.backend.videoEditReady ? `Video runtime: OK (${appState.backend.ffmpegBin || 'ffmpeg'})` : 'Video runtime: ffmpeg indisponível');
                 lines.push(appState.backend.ytDlpAvailable ? `yt-dlp: OK (${appState.backend.ytDlpBin || 'yt-dlp'})` : `yt-dlp: indisponível (${appState.backend.ytDlpBin || 'yt-dlp'})`);
                 if (appState.backend.healthUrl) lines.push(`Health: ${appState.backend.healthUrl}`);
                 if (appState.sourceKind === 'youtube') {
@@ -1791,7 +2176,10 @@
                 if (stage === 4) {
                     const blockedReason = getTranscribeBlockingReason();
                     if (blockedReason) return `Próximo passo: transcrição bloqueada. ${blockedReason}`;
-                    return 'Próximo passo: clique em Transcrever para gerar legendas temporizadas com ElevenLabs.';
+                    if (appState.sourceKind === 'youtube' || appState.sourceKind === 'link') {
+                        return 'Próximo passo: transcrição automática já roda ao enviar link; use Reajustar para recalibrar legendas e cortes.';
+                    }
+                    return 'Próximo passo: clique em Reajustar para gerar legendas temporizadas com ElevenLabs.';
                 }
                 if (appState.exportCount > 0 || appState.packCount > 0) {
                     return 'Fluxo completo. Faça refinamentos e gere novas variações com comandos no chat.';
@@ -1895,8 +2283,11 @@
                         appState.backend.directTranscribeReady = Boolean(payload.directTranscribeReady);
                         appState.backend.youtubeTranscribeReady = Boolean(payload.youtubeTranscribeReady);
                         appState.backend.imageGenerationReady = Boolean(payload.imageGenerationReady);
+                        appState.backend.videoEditReady = Boolean(payload.videoEditReady);
                         appState.backend.ytDlpAvailable = Boolean(payload.ytDlp?.available);
                         appState.backend.ytDlpBin = String(payload.ytDlp?.configured || payload.ytDlp?.command || '');
+                        appState.backend.ffmpegAvailable = Boolean(payload.ffmpeg?.available);
+                        appState.backend.ffmpegBin = String(payload.ffmpeg?.configured || payload.ffmpeg?.command || '');
                         appState.backend.runtime = String(payload.runtime || (isHostedDeploymentContext() ? 'serverless' : 'local-node'));
                         appState.backend.healthUrl = resolvedHealthUrl;
                         appState.backend.keyVaultReady = Boolean(payload.keyVaultReady);
@@ -1910,6 +2301,9 @@
                             if (!isHostedDeploymentContext() && appState.backend.runtime !== 'serverless') {
                                 problems.push('yt-dlp ausente para YouTube');
                             }
+                        }
+                        if (!appState.backend.videoEditReady && !isHostedDeploymentContext()) {
+                            problems.push('ffmpeg ausente para patch/render runtime');
                         }
                         const backendLabel = isHostedDeploymentContext() ? 'Backend do deploy' : 'Backend local';
                         if (problems.length) {
@@ -1925,7 +2319,10 @@
                         appState.backend.directTranscribeReady = false;
                         appState.backend.youtubeTranscribeReady = false;
                         appState.backend.imageGenerationReady = false;
+                        appState.backend.videoEditReady = false;
                         appState.backend.ytDlpAvailable = false;
+                        appState.backend.ffmpegAvailable = false;
+                        appState.backend.ffmpegBin = '';
                         appState.backend.runtime = '';
                         appState.backend.healthUrl = '';
                         appState.backend.keyVaultReady = false;
@@ -2237,6 +2634,13 @@
                 return captions.slice(0, 40);
             }
 
+            function syncClipCaptionsToTranscript(clip) {
+                if (!clip || appState.captionsSource !== 'transcribed') return;
+                if (!Array.isArray(appState.transcriptWords) || !appState.transcriptWords.length) return;
+                clip.captions = buildCaptionsFromWordsForClip(clip, appState.transcriptWords);
+                enrichClipMetadata(clip, clip.theme || clipThemes[0]?.title || 'General');
+            }
+
             async function transcribeWithElevenLabs() {
                 const payload = await buildTranscribeRequestPayload();
 
@@ -2263,30 +2667,38 @@
                 return data;
             }
 
-            async function handleTranscribeCaptions() {
+            async function handleTranscribeCaptions(options = {}) {
+                const automatic = Boolean(options.automatic);
                 if (!appState.clips.length) {
                     setTranscribeStatus('Gere os clips antes de transcrever.', 'error');
                     updateWorkflowGuide();
                     return;
                 }
 
+                if (appState.transcribeInFlight) return;
+
                 await refreshBackendHealth(false);
                 const transcribeBlock = getTranscribeBlockingReason();
                 if (transcribeBlock) {
                     setTranscribeStatus(transcribeBlock, 'error');
-                    addChatMessage('assistant', transcribeBlock);
+                    if (!automatic) addChatMessage('assistant', transcribeBlock);
                     updateWorkflowGuide();
                     return;
                 }
 
-                if (transcribeCaptionsBtn.disabled) return;
+                if (transcribeCaptionsBtn.disabled && !automatic) return;
                 const original = transcribeCaptionsBtn.innerHTML;
+                appState.transcribeInFlight = true;
                 transcribeCaptionsBtn.disabled = true;
-                transcribeCaptionsBtn.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="animate-spin"></iconify-icon> Transcrevendo...';
-                if (appState.sourceKind === 'youtube') {
-                    setTranscribeStatus('Baixando áudio do YouTube automaticamente e transcrevendo com ElevenLabs...', 'muted');
+                transcribeCaptionsBtn.innerHTML = automatic
+                    ? '<iconify-icon icon="solar:spinner-linear" class="animate-spin"></iconify-icon> Auto...'
+                    : '<iconify-icon icon="solar:spinner-linear" class="animate-spin"></iconify-icon> Reajustando...';
+                if (automatic) {
+                    setTranscribeStatus('Link recebido. Transcrevendo automaticamente e encaixando captions nos cortes...', 'muted');
+                } else if (appState.sourceKind === 'youtube') {
+                    setTranscribeStatus('Reajustando captions via transcrição do YouTube...', 'muted');
                 } else {
-                    setTranscribeStatus('Enviando mídia para ElevenLabs STT...', 'muted');
+                    setTranscribeStatus('Reajustando captions com STT...', 'muted');
                 }
 
                 try {
@@ -2300,24 +2712,37 @@
                         throw new Error('A API não retornou timestamps de palavras para gerar legendas.');
                     }
 
+                    appState.transcriptWords = words;
                     appState.clips = appState.clips.map((clip) => {
                         const captions = buildCaptionsFromWordsForClip(clip, words);
-                        return { ...clip, captions };
+                        return enrichClipMetadata({ ...clip, captions }, clip.theme || clipThemes[0]?.title || 'General');
                     });
                     appState.captionsSource = 'transcribed';
+                    appState.activeThemeFilter = 'all';
+                    appState.activeSubjectFilter = 'all';
 
                     const active = getActiveClip();
                     if (active) {
                         renderCaptions(active);
                         updateCaptionPreviewText();
                     }
+                    switchEditorTab('captions');
+                    renderClipGrid();
+                    applyFilter(appState.activeFilter);
 
-                    setTranscribeStatus(`Transcrição concluída: ${words.length} palavras mapeadas para ${appState.clips.length} clips.`, 'success');
+                    const warning = String(result.warning || '').trim();
+                    const statusMsg = `Transcrição concluída: ${words.length} palavras mapeadas para ${appState.clips.length} clips.${warning ? ` Aviso: ${warning}` : ''}`;
+                    setTranscribeStatus(statusMsg, 'success');
                     setEditorStatus('Legendas atualizadas com transcrição ElevenLabs.', 'success');
-                    addChatMessage('assistant', 'Transcrição concluída via ElevenLabs. Legendas aplicadas em todos os clips.');
+                    if (automatic) {
+                        addChatMessage('assistant', 'Transcrição automática concluída. As captions já foram sincronizadas com todos os cortes.');
+                    } else {
+                        addChatMessage('assistant', 'Reajuste concluído. As captions foram resincronizadas com os cortes.');
+                    }
                 } catch (error) {
                     setTranscribeStatus(error.message || 'Falha ao transcrever.', 'error');
                 } finally {
+                    appState.transcribeInFlight = false;
                     transcribeCaptionsBtn.disabled = false;
                     transcribeCaptionsBtn.innerHTML = original;
                     updateWorkflowGuide();
@@ -2377,6 +2802,131 @@
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#039;');
+            }
+
+            const SUBJECT_STOPWORDS = new Set([
+                'about', 'after', 'again', 'algo', 'alguma', 'algumas', 'algum', 'alguns', 'antes', 'aqui', 'assim',
+                'bem', 'cada', 'como', 'com', 'contra', 'coisa', 'coisas', 'desde', 'depois', 'dos', 'das',
+                'essa', 'essas', 'esse', 'esses', 'esta', 'estas', 'este', 'estes', 'estao', 'está', 'estão',
+                'fazer', 'fazendo', 'for', 'from', 'have', 'isso', 'isto', 'mais', 'mas', 'mesmo', 'muito',
+                'nada', 'nao', 'não', 'nos', 'nós', 'num', 'numa', 'onde', 'para', 'porque', 'quando',
+                'sobre', 'sem', 'seu', 'sua', 'suas', 'seus', 'that', 'this', 'uma', 'umas', 'uns', 'with',
+                'você', 'voce', 'your', 'you', 'the', 'and', 'are', 'was', 'were', 'what', 'which', 'will',
+                'por', 'pra', 'pro', 'dos', 'das', 'nosso', 'nossa', 'nossos', 'nossas'
+            ]);
+
+            function toFilterId(value, fallback = 'geral') {
+                const normalized = String(value || '')
+                    .trim()
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                return normalized || fallback;
+            }
+
+            function toTitleCase(label) {
+                return String(label || '')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+            }
+
+            function extractSubjectTokens(rawText) {
+                const clean = String(rawText || '')
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                if (!clean) return [];
+                return clean
+                    .split(' ')
+                    .filter((token) => token.length >= 3 && !SUBJECT_STOPWORDS.has(token));
+            }
+
+            function inferClipSubjectFromText(rawText) {
+                const tokens = extractSubjectTokens(rawText);
+                if (!tokens.length) {
+                    return { id: 'geral', label: 'Geral' };
+                }
+
+                const counts = new Map();
+                tokens.forEach((token) => {
+                    counts.set(token, (counts.get(token) || 0) + 1);
+                });
+
+                const ranked = Array.from(counts.entries())
+                    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+                    .map(([token]) => token);
+
+                const top = ranked.slice(0, 2);
+                const label = toTitleCase(top.join(' '));
+                const id = toFilterId(top.join('-'), 'geral');
+                return { id, label: label || 'Geral' };
+            }
+
+            function enrichClipMetadata(clip, fallbackTheme = '') {
+                if (!clip || typeof clip !== 'object') return clip;
+                const fallbackThemeLabel = String(fallbackTheme || 'General').trim();
+                const themeLabel = String(clip.theme || fallbackThemeLabel || 'General').trim() || 'General';
+                clip.theme = themeLabel;
+                clip.themeId = toFilterId(themeLabel, 'general');
+
+                const captionText = Array.isArray(clip.captions)
+                    ? clip.captions.map((caption) => String(caption.text || '').trim()).join(' ')
+                    : '';
+                const subject = inferClipSubjectFromText(captionText || `${clip.title || ''} ${clip.hook || ''}`);
+                clip.subjectId = subject.id;
+                clip.subject = subject.label;
+                return clip;
+            }
+
+            function refreshClipMetadataFromCaptions() {
+                appState.clips = appState.clips.map((clip, index) => {
+                    const fallbackTheme = clipThemes[index % clipThemes.length]?.title || 'General';
+                    return enrichClipMetadata(clip, fallbackTheme);
+                });
+            }
+
+            function fillSelectOptions(selectEl, options, selectedValue = 'all') {
+                if (!selectEl) return;
+                const values = [];
+                const seen = new Set();
+                (Array.isArray(options) ? options : []).forEach((entry) => {
+                    if (!entry || !entry.id) return;
+                    const id = String(entry.id);
+                    if (seen.has(id)) return;
+                    seen.add(id);
+                    values.push({ id, label: String(entry.label || id) });
+                });
+                selectEl.innerHTML = ['<option value="all">Todos</option>', ...values.map((entry) => {
+                    const label = escapeHtml(entry.label);
+                    const value = escapeHtml(entry.id);
+                    return `<option value="${value}">${label}</option>`;
+                })].join('');
+                const hasCurrent = values.some((entry) => entry.id === selectedValue);
+                selectEl.value = hasCurrent ? selectedValue : 'all';
+            }
+
+            function updateThemeSubjectFilterOptions() {
+                const themeOptions = appState.clips.map((clip) => ({
+                    id: String(clip.themeId || 'general'),
+                    label: String(clip.theme || 'General')
+                }));
+                fillSelectOptions(themeFilterSelect, themeOptions, appState.activeThemeFilter);
+                appState.activeThemeFilter = themeFilterSelect ? themeFilterSelect.value : 'all';
+
+                const subjectOptions = appState.clips.map((clip) => ({
+                    id: String(clip.subjectId || 'geral'),
+                    label: String(clip.subject || 'Geral')
+                }));
+                fillSelectOptions(subjectFilterSelect, subjectOptions, appState.activeSubjectFilter);
+                appState.activeSubjectFilter = subjectFilterSelect ? subjectFilterSelect.value : 'all';
             }
 
             function ensureClipEditData(clip) {
@@ -2671,7 +3221,9 @@
                         templates: [],
                         ingest: null,
                         patchLayers: [],
-                        renderPlan: null
+                        renderPlan: null,
+                        lastPatchResult: null,
+                        lastRenderResult: null
                     };
                 }
                 if (!appState.automation.nodes || !Object.keys(appState.automation.nodes).length) {
@@ -2682,6 +3234,8 @@
                 if (!Array.isArray(appState.automation.patchLayers)) appState.automation.patchLayers = [];
                 if (!Object.prototype.hasOwnProperty.call(appState.automation, 'ingest')) appState.automation.ingest = null;
                 if (!Object.prototype.hasOwnProperty.call(appState.automation, 'renderPlan')) appState.automation.renderPlan = null;
+                if (!Object.prototype.hasOwnProperty.call(appState.automation, 'lastPatchResult')) appState.automation.lastPatchResult = null;
+                if (!Object.prototype.hasOwnProperty.call(appState.automation, 'lastRenderResult')) appState.automation.lastRenderResult = null;
                 if (!appState.automation.selectedNodeId || !appState.automation.nodes[appState.automation.selectedNodeId]) {
                     appState.automation.selectedNodeId = 'trigger_new_video';
                 }
@@ -2942,6 +3496,28 @@
                 return words.slice(0, maxWords).join(' ');
             }
 
+            function resolveAutomationRuntimeSource() {
+                const source = String(appState.sourceSrc || '').trim();
+                if (!source) return null;
+                if (source.startsWith('blob:')) return null;
+                if (/^https?:\/\//i.test(source)) {
+                    return {
+                        sourceUrl: source,
+                        youtubeUrl: appState.sourceKind === 'youtube' ? source : ''
+                    };
+                }
+                return null;
+            }
+
+            function upsertAutomationPatchLayer(patch) {
+                if (!patch || !patch.patchId) return;
+                ensureAutomationState();
+                const idx = appState.automation.patchLayers.findIndex((item) => item && item.patchId === patch.patchId);
+                if (idx >= 0) appState.automation.patchLayers[idx] = patch;
+                else appState.automation.patchLayers.unshift(patch);
+                appState.automation.patchLayers = appState.automation.patchLayers.slice(0, 100);
+            }
+
             async function runAutomationIngest() {
                 if (!appState.sourceSrc) {
                     setAutomationInfraStatus('Carregue um vídeo/link antes do ingest.', 'error');
@@ -3027,8 +3603,8 @@
                 }, 25000);
 
                 const patch = patchResponse.patch;
-                appState.automation.patchLayers.unshift(patch);
-                appState.automation.patchLayers = appState.automation.patchLayers.slice(0, 100);
+                upsertAutomationPatchLayer(patch);
+                appState.automation.lastPatchResult = patchResponse;
 
                 appendAutomationInfraLog(`Patch ${patch.patchId.slice(0, 8)} criado em ${patch.frame.timestampSec}s.`, 'success');
 
@@ -3045,6 +3621,66 @@
                 appendAutomationInfraLog(`Motion job ${motionResponse.motion.motionJobId.slice(0, 8)} (${motionResponse.motion.method}).`, 'neutral');
 
                 setAutomationInfraStatus('AI patch layer criada e motion reconstruction planejado.', 'success');
+            }
+
+            async function executeAutomationFramePatch() {
+                const clip = getActiveClip() || appState.clips[0];
+                if (!clip) {
+                    setAutomationInfraStatus('Selecione um clip antes de executar patch.', 'error');
+                    return;
+                }
+
+                const runtimeSource = resolveAutomationRuntimeSource();
+                if (!runtimeSource) {
+                    setAutomationInfraStatus('Execução runtime exige link público/YouTube. Para blob local, use link público ou backend com upload.', 'error');
+                    return;
+                }
+
+                const inferredPlayhead = getPlaybackCurrentTime();
+                const fallbackTs = Number.isFinite(inferredPlayhead) ? inferredPlayhead : clip.start;
+                const tsInput = parseFloat(automationPatchTimestampInput.value);
+                const timestampSec = Number.isFinite(tsInput) ? tsInput : fallbackTs;
+                const instruction = String(automationPatchInstructionInput.value || '').trim();
+                if (!instruction) {
+                    setAutomationInfraStatus('Descreva a edição do frame para executar patch.', 'error');
+                    return;
+                }
+
+                const provider = String(automationPatchProviderSelect.value || 'google_nano_banana').trim();
+                const latestPatch = appState.automation.patchLayers[0] || null;
+                const payload = {
+                    action: 'frame_patch_execute',
+                    patchId: latestPatch && latestPatch.patchId ? latestPatch.patchId : undefined,
+                    videoId: clip.id,
+                    timestampSec: clamp(timestampSec, clip.start, clip.end),
+                    fps: 30,
+                    region: latestPatch?.region || { x: 0.28, y: 0.2, width: 0.44, height: 0.56 },
+                    instruction,
+                    provider,
+                    model: provider === 'google_nano_banana' ? 'gemini-3-pro-image-preview' : provider,
+                    motionMethod: provider === 'kling' ? 'kling_3' : 'optical_flow_reprojection',
+                    ...runtimeSource
+                };
+
+                const data = await fetchBackendJson(resolveAutomationFramePatchApiUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }, 180000);
+
+                if (data.patch) upsertAutomationPatchLayer(data.patch);
+                appState.automation.lastPatchResult = data;
+
+                if (data.motion?.motionJobId) {
+                    appendAutomationInfraLog(`Motion auto ${data.motion.motionJobId.slice(0, 8)} (${data.motion.method}).`, 'neutral');
+                }
+                if (data.generatedImage?.provider) {
+                    appendAutomationInfraLog(`Imagem de patch gerada via ${data.generatedImage.provider}.`, 'neutral');
+                }
+
+                const shortPatchId = data.patch?.patchId ? data.patch.patchId.slice(0, 8) : 'patch';
+                setAutomationInfraStatus(`Patch ${shortPatchId} executado com sucesso.`, 'success');
+                appendAutomationInfraLog(`Patch ${shortPatchId}: frame original/editado/diff atualizados.`, 'success');
             }
 
             async function planAutomationIncrementalRender() {
@@ -3070,6 +3706,53 @@
                 const ratio = Number(data.renderPlan?.cacheHints?.reencodeRatio || 0);
                 setAutomationInfraStatus(`Render incremental pronto: ${changed} segmentos alterados (ratio ${(ratio * 100).toFixed(1)}%).`, 'success');
                 appendAutomationInfraLog(`Render plan ${data.renderPlan.renderPlanId.slice(0, 8)} gerado.`, 'success');
+            }
+
+            async function executeAutomationIncrementalRender() {
+                const runtimeSource = resolveAutomationRuntimeSource();
+                if (!runtimeSource) {
+                    setAutomationInfraStatus('Execução de render exige link público/YouTube acessível pelo backend.', 'error');
+                    return;
+                }
+
+                if (!appState.automation.renderPlan) {
+                    await planAutomationIncrementalRender();
+                }
+                if (!appState.automation.renderPlan) {
+                    setAutomationInfraStatus('Não foi possível preparar render plan.', 'error');
+                    return;
+                }
+
+                const clip = getActiveClip() || appState.clips[0];
+                const fallbackDuration = clip ? Math.max(2, clip.end - clip.start) : 60;
+                const payload = {
+                    action: 'render_execute',
+                    durationSec: Number(appState.duration || fallbackDuration) || fallbackDuration,
+                    fps: 30,
+                    renderPlan: appState.automation.renderPlan,
+                    patchLayers: appState.automation.patchLayers,
+                    ...runtimeSource
+                };
+
+                const data = await fetchBackendJson(resolveAutomationRenderApiUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }, 240000);
+
+                appState.automation.lastRenderResult = data;
+                if (data.renderPlan) appState.automation.renderPlan = data.renderPlan;
+
+                const outputUri = String(data.output?.uri || '').trim();
+                const segmentCount = Number(data.stats?.totalSegments || (Array.isArray(data.segments) ? data.segments.length : 0));
+                const reencoded = Number(data.stats?.reencodedSegments || 0);
+                setAutomationInfraStatus(`Render executado: ${segmentCount} segmentos (${reencoded} reencode).`, 'success');
+
+                if (outputUri) {
+                    appendAutomationInfraLog(`Output: ${outputUri}`, 'success');
+                } else {
+                    appendAutomationInfraLog('Render concluído, mas sem URI pública de saída.', 'neutral');
+                }
             }
 
             async function saveProviderKeyToBackend(provider, apiKey) {
@@ -3212,6 +3895,17 @@
                 timelineStartValue.textContent = formatTime(clip.start);
                 timelinePlayheadValue.textContent = formatTime(playhead);
                 timelineEndValue.textContent = formatTime(clip.end);
+                if (timelineDurationValue) {
+                    timelineDurationValue.textContent = formatTime(Math.max(0, clip.end - clip.start));
+                }
+                if (timelinePlayheadNeedle) {
+                    const span = Math.max(clip.end - clip.start, 0.1);
+                    const progress = clamp(((playhead - clip.start) / span) * 100, 0, 100);
+                    timelinePlayheadNeedle.style.left = `${progress}%`;
+                }
+                if (timelinePlayheadTag) {
+                    timelinePlayheadTag.textContent = formatTime(playhead);
+                }
 
                 timelineCropZoom.value = String(clip.crop.zoom);
                 timelineCropX.value = String(clip.crop.x);
@@ -3252,6 +3946,7 @@
                     clip.end = roundTenth(clamp(playhead, clip.start + 0.2, appState.duration));
                     seekPlayback(Math.min(playhead, clip.end));
                 }
+                syncClipCaptionsToTranscript(clip);
                 syncClipUi(clip);
                 updateCardInfo(clip);
                 renderClipGrid();
@@ -3267,6 +3962,7 @@
                 if (!clip) return;
                 clip.start = roundTenth(clamp(Number(clip.baseStart) || 0, 0, appState.duration - 0.2));
                 clip.end = roundTenth(clamp(Number(clip.baseEnd) || clip.start + 0.2, clip.start + 0.2, appState.duration));
+                syncClipCaptionsToTranscript(clip);
                 syncClipUi(clip);
                 updateCardInfo(clip);
                 renderClipGrid();
@@ -4001,30 +4697,39 @@
                         hook: 'Hook: Quick Win',
                         score: 92,
                         start: 0,
-                        end: roundTenth(duration)
+                        end: roundTenth(duration),
+                        theme: clipThemes[0].title
                     };
-                    return [{ ...base, captions: buildCaptions(base, clipThemes[0]) }].map((clip) => ensureClipEditData(clip));
+                    return [{ ...base, captions: buildCaptions(base, clipThemes[0]) }]
+                        .map((clip) => ensureClipEditData(enrichClipMetadata(clip, clipThemes[0].title)));
                 }
 
-                const clipCount = Math.min(6, Math.max(3, Math.round(duration / 35)));
-                const clipLength = Math.min(45, Math.max(10, duration / (clipCount + 0.4)));
-                const gap = clipCount > 1 ? Math.max(4, (duration - clipLength) / (clipCount - 1)) : 0;
+                const clipCount = Math.min(9, Math.max(4, Math.round(duration / 28)));
+                const baseLength = clamp(duration / (clipCount + 0.8), 9, 42);
+                const usableSpan = Math.max(0, duration - baseLength - 0.2);
+                const baseStep = clipCount > 1 ? usableSpan / (clipCount - 1) : 0;
+                const lengthPattern = [0.72, 0.58, 0.86, 0.67, 0.93, 0.62, 0.78, 0.69, 0.88];
+                const offsetPattern = [0, 0.08, -0.04, 0.12, -0.07, 0.16, -0.1, 0.2, -0.14];
 
                 return Array.from({ length: clipCount }, (_, index) => {
-                    const start = roundTenth(Math.min(duration - 4, Math.max(0, gap * index)));
-                    const end = roundTenth(Math.min(duration, Math.max(start + 6, start + clipLength + (index % 2 ? 2 : -1))));
+                    const steppedStart = (baseStep * index) + (baseStep * offsetPattern[index % offsetPattern.length]);
+                    const start = roundTenth(clamp(steppedStart, 0, Math.max(0, duration - 6)));
+                    const patternedLength = baseLength * lengthPattern[index % lengthPattern.length];
+                    const clipLength = clamp(patternedLength + (index % 2 ? 1.6 : -0.8), 7, 48);
+                    const end = roundTenth(clamp(start + clipLength, start + 6, duration));
                     const theme = clipThemes[index % clipThemes.length];
                     const clip = {
                         id: `clip-${index + 1}`,
                         title: `${theme.title} #${index + 1}`,
-                        category: index < Math.ceil(clipCount / 2) ? 'highscore' : 'drafts',
+                        category: index < Math.ceil(clipCount * 0.6) ? 'highscore' : 'drafts',
                         hook: theme.hook,
                         score: Math.max(70, 97 - index * 5),
                         start,
-                        end
+                        end,
+                        theme: theme.title
                     };
                     return { ...clip, captions: buildCaptions(clip, theme) };
-                }).map((clip) => ensureClipEditData(clip));
+                }).map((clip) => ensureClipEditData(enrichClipMetadata(clip, clip.theme)));
             }
 
             function getActiveClip() {
@@ -4050,9 +4755,13 @@
                 const activeClass = clip.id === appState.activeClipId
                     ? 'border-accent/40 shadow-[0_0_25px_rgba(200,255,0,0.08)]'
                     : 'border-white/10';
+                const themeLabel = String(clip.theme || 'General');
+                const subjectLabel = String(clip.subject || 'Geral');
+                const themeId = String(clip.themeId || toFilterId(themeLabel, 'general'));
+                const subjectId = String(clip.subjectId || toFilterId(subjectLabel, 'geral'));
 
                 return `
-                    <div class="clip-card group relative bg-white/[0.02] ${activeClass} rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]" data-category="${clip.category}" data-clip-id="${clip.id}" title="Double click to open advanced timeline editor">
+                    <div class="clip-card group relative bg-white/[0.02] ${activeClass} rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]" data-category="${clip.category}" data-theme="${escapeHtml(themeId)}" data-subject="${escapeHtml(subjectId)}" data-clip-id="${clip.id}" title="Double click to open advanced timeline editor">
                         <div class="relative aspect-[9/16] bg-black/80 overflow-hidden cursor-pointer play-trigger">
                             <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(200,255,0,0.22),transparent_38%),radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.16),transparent_45%),linear-gradient(to_bottom_right,#111,#000)]"></div>
                             <div class="absolute inset-0 flex items-center justify-center">
@@ -4078,7 +4787,8 @@
                                     </button>
                                 </div>
                             </div>
-                            <p class="text-[10px] text-white/35 mt-2">Double click: timeline editor</p>
+                            <p class="text-[10px] text-white/35 mt-2 uppercase tracking-wider">${escapeHtml(themeLabel)} · ${escapeHtml(subjectLabel)}</p>
+                            <p class="text-[10px] text-white/25 mt-1">Double click: timeline editor</p>
                         </div>
                     </div>
                 `;
@@ -4090,6 +4800,7 @@
                     processingCard.classList.add('hidden');
                     clipGrid.appendChild(processingCard);
                 }
+                updateThemeSubjectFilterOptions();
                 applyFilter(appState.activeFilter);
             }
 
@@ -4105,8 +4816,10 @@
                 });
 
                 clipGrid.querySelectorAll('.clip-card').forEach((card) => {
-                    const matches = filter === 'all' || card.dataset.category === filter;
-                    card.style.display = matches ? 'block' : 'none';
+                    const matchesCategory = filter === 'all' || card.dataset.category === filter;
+                    const matchesTheme = appState.activeThemeFilter === 'all' || card.dataset.theme === appState.activeThemeFilter;
+                    const matchesSubject = appState.activeSubjectFilter === 'all' || card.dataset.subject === appState.activeSubjectFilter;
+                    card.style.display = matchesCategory && matchesTheme && matchesSubject ? 'block' : 'none';
                 });
             }
 
@@ -4351,8 +5064,13 @@
 
                 clip.start = roundTenth(start);
                 clip.end = roundTenth(end);
+                syncClipCaptionsToTranscript(clip);
                 syncClipUi(clip);
-                updateCardInfo(clip);
+                if (appState.captionsSource === 'transcribed' && appState.transcriptWords.length) {
+                    renderClipGrid();
+                } else {
+                    updateCardInfo(clip);
+                }
                 setEditorStatus('Clip timing updated.', 'success');
 
                 const currentTime = getPlaybackCurrentTime();
@@ -4771,8 +5489,13 @@
                     if (clip.end <= clip.start + 0.2) clip.start = roundTenth(clamp(clip.end - 0.2, 0, appState.duration - 0.2));
                 }
 
+                syncClipCaptionsToTranscript(clip);
                 syncClipUi(clip);
-                updateCardInfo(clip);
+                if (appState.captionsSource === 'transcribed' && appState.transcriptWords.length) {
+                    renderClipGrid();
+                } else {
+                    updateCardInfo(clip);
+                }
                 seekPlayback(clip.start);
                 ensureClipEditData(clip);
                 applyClipVisualTransform();
@@ -4795,6 +5518,9 @@
                 if (stage === 4) {
                     const blocked = getTranscribeBlockingReason();
                     if (blocked) return `Passo 4/5 bloqueado: ${blocked}`;
+                    if (appState.sourceKind === 'youtube' || appState.sourceKind === 'link') {
+                        return 'Passo 4/5: transcrição automática ativa para link. Execute "transcrever" só para reajustes.';
+                    }
                     return 'Passo 4/5: execute "transcrever" para aplicar legendas temporizadas em todos os clips.';
                 }
                 if (appState.exportCount > 0 || appState.packCount > 0) {
@@ -5135,7 +5861,7 @@
                 dropText.textContent = 'Click to upload or drag & drop';
                 setGenerateStatus('');
                 setEditorStatus('');
-                setTranscribeStatus('Transcrição ElevenLabs pronta (YouTube automático no backend).', 'muted');
+                setTranscribeStatus('Envie um link para transcrição automática. Use Reajustar para recalibrar captions.', 'muted');
                 resultsSection.classList.add('hidden', 'opacity-0');
                 editorSection.classList.add('hidden', 'opacity-0');
                 editorVideo.pause();
@@ -5155,6 +5881,9 @@
                 appState.clips = [];
                 appState.activeClipId = null;
                 appState.activeCaptionId = null;
+                appState.activeFilter = 'all';
+                appState.activeThemeFilter = 'all';
+                appState.activeSubjectFilter = 'all';
                 applyClipVisualTransform();
                 appState.sourceSrc = '';
                 appState.sourceLabel = '';
@@ -5164,6 +5893,8 @@
                 appState.youtubePlaybackBlockReason = '';
                 appState.duration = 0;
                 appState.captionsSource = 'template';
+                appState.transcriptWords = [];
+                appState.transcribeInFlight = false;
                 appState.exportCount = 0;
                 appState.packCount = 0;
                 appState.space = { connected: false, name: '', thumbs: [], titles: [], hashtags: [] };
@@ -5192,6 +5923,8 @@
                 setAgentStatus('Agent disconnected.', 'muted');
                 agentConnectBtn.textContent = 'Connect Agent';
                 sourceSummary.textContent = 'Source: No video loaded yet';
+                updateThemeSubjectFilterOptions();
+                applyFilter('all');
                 updateWorkflowGuide();
                 refreshBackendHealth(false).catch(() => {});
             });
@@ -5231,10 +5964,15 @@
                     appState.duration = source.duration;
                     appState.clips = buildClips(source.duration).map((clip) => ensureClipEditData(clip));
                     appState.captionsSource = 'template';
+                    appState.transcriptWords = [];
+                    appState.transcribeInFlight = false;
                     appState.exportCount = 0;
                     appState.packCount = 0;
                     appState.activeClipId = appState.clips[0] ? appState.clips[0].id : null;
                     appState.activeCaptionId = null;
+                    appState.activeFilter = 'all';
+                    appState.activeThemeFilter = 'all';
+                    appState.activeSubjectFilter = 'all';
                     appState.space.thumbs = [];
                     appState.space.titles = [];
                     appState.space.hashtags = [];
@@ -5263,7 +6001,16 @@
                     } else {
                         setGenerateStatus(`Generated ${appState.clips.length} clips from this video.`, 'success');
                     }
-                    setTranscribeStatus('Clique em Transcrever para gerar legendas temporizadas (YouTube também automático).', 'muted');
+                    switchEditorTab('captions');
+                    const shouldAutoTranscribe = !file && (appState.sourceKind === 'youtube' || appState.sourceKind === 'link');
+                    if (shouldAutoTranscribe) {
+                        setTranscribeStatus('Link detectado. Iniciando transcrição automática...', 'muted');
+                        setTimeout(() => {
+                            handleTranscribeCaptions({ automatic: true }).catch(() => {});
+                        }, 120);
+                    } else {
+                        setTranscribeStatus('Use Reajustar para sincronizar/atualizar captions após ajustes de corte.', 'muted');
+                    }
                     addChatMessage('assistant', `Project loaded: ${appState.clips.length} clips ready to edit.`);
                     refreshBackendHealth(false).catch(() => {});
                     updateWorkflowGuide();
@@ -5281,6 +6028,20 @@
             filterBtns.forEach((btn) => {
                 btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
             });
+
+            if (themeFilterSelect) {
+                themeFilterSelect.addEventListener('change', () => {
+                    appState.activeThemeFilter = themeFilterSelect.value || 'all';
+                    applyFilter(appState.activeFilter);
+                });
+            }
+
+            if (subjectFilterSelect) {
+                subjectFilterSelect.addEventListener('change', () => {
+                    appState.activeSubjectFilter = subjectFilterSelect.value || 'all';
+                    applyFilter(appState.activeFilter);
+                });
+            }
 
             clipGrid.addEventListener('click', async (event) => {
                 const card = event.target.closest('.clip-card');
@@ -5609,6 +6370,18 @@
                 }
             });
 
+            automationExecutePatchBtn.addEventListener('click', async () => {
+                automationExecutePatchBtn.disabled = true;
+                try {
+                    await executeAutomationFramePatch();
+                } catch (error) {
+                    setAutomationInfraStatus(error.message || 'Falha ao executar patch.', 'error');
+                    appendAutomationInfraLog(error.message || 'Falha ao executar patch.', 'error');
+                } finally {
+                    automationExecutePatchBtn.disabled = false;
+                }
+            });
+
             automationPlanRenderBtn.addEventListener('click', async () => {
                 automationPlanRenderBtn.disabled = true;
                 try {
@@ -5618,6 +6391,18 @@
                     appendAutomationInfraLog(error.message || 'Falha ao planejar render.', 'error');
                 } finally {
                     automationPlanRenderBtn.disabled = false;
+                }
+            });
+
+            automationExecuteRenderBtn.addEventListener('click', async () => {
+                automationExecuteRenderBtn.disabled = true;
+                try {
+                    await executeAutomationIncrementalRender();
+                } catch (error) {
+                    setAutomationInfraStatus(error.message || 'Falha ao executar render.', 'error');
+                    appendAutomationInfraLog(error.message || 'Falha ao executar render.', 'error');
+                } finally {
+                    automationExecuteRenderBtn.disabled = false;
                 }
             });
 
@@ -5760,7 +6545,9 @@
             });
 
             renderBtn.addEventListener('click', handleExport);
-            transcribeCaptionsBtn.addEventListener('click', handleTranscribeCaptions);
+            transcribeCaptionsBtn.addEventListener('click', () => {
+                handleTranscribeCaptions().catch(() => {});
+            });
 
             commandSendBtn.addEventListener('click', async () => {
                 const text = commandInput.value.trim();
@@ -5883,7 +6670,9 @@
             applyCaptionStyle();
             addChatMessage('assistant', 'Command center online. Digite "ajuda" para seguir o passo a passo do fluxo.');
             addComplementMessage('assistant', 'Aba pronta. Ex: "gerar para gaps" ou descreva uma cena para preencher o espaço vazio.');
-            setTranscribeStatus('Transcrição ElevenLabs pronta (YouTube automático no backend).', 'muted');
+            updateThemeSubjectFilterOptions();
+            applyFilter('all');
+            setTranscribeStatus('Envie um link para transcrição automática. Use Reajustar para recalibrar captions.', 'muted');
             setGenerateStatus('Cole link do YouTube, link direto de vídeo (mp4/webm/mov) ou envie um arquivo para começar.', 'muted');
             updateWorkflowGuide();
             refreshBackendHealth(true).catch(() => {});
