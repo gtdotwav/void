@@ -1655,10 +1655,10 @@
                         : 'ELEVENLABS_API_KEY ausente no backend (.env).';
                 }
                 if (appState.sourceKind === 'youtube' && !appState.backend.ytDlpAvailable) {
-                    if (isHostedDeploymentContext() || appState.backend.runtime === 'serverless') {
-                        return 'YouTube auto-transcribe indisponível no deploy serverless. Faça upload do arquivo para transcrever.';
+                    // Serverless deploy can use HTTP fallback without yt-dlp binary.
+                    if (!isHostedDeploymentContext() && appState.backend.runtime !== 'serverless') {
+                        return `yt-dlp indisponível (${appState.backend.ytDlpBin || 'yt-dlp'}). Instale para transcrever YouTube automaticamente.`;
                     }
-                    return `yt-dlp indisponível (${appState.backend.ytDlpBin || 'yt-dlp'}). Instale para transcrever YouTube automaticamente.`;
                 }
                 return '';
             }
@@ -1818,9 +1818,7 @@
                             problems.push(isHostedDeploymentContext() ? 'sem ELEVENLABS_API_KEY na Vercel' : 'sem ELEVENLABS_API_KEY');
                         }
                         if (appState.sourceKind === 'youtube' && !appState.backend.ytDlpAvailable) {
-                            if (isHostedDeploymentContext() || appState.backend.runtime === 'serverless') {
-                                problems.push('YouTube auto-transcribe exige upload no deploy');
-                            } else {
+                            if (!isHostedDeploymentContext() && appState.backend.runtime !== 'serverless') {
                                 problems.push('yt-dlp ausente para YouTube');
                             }
                         }

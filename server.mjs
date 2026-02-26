@@ -35,6 +35,10 @@ const OPENAI_IMAGES_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 const YT_DLP_HEALTH_TTL_MS = 60 * 1000;
 const YT_DLP_HEALTH_TIMEOUT_MS = Number(env.YT_DLP_HEALTH_TIMEOUT_MS || 3500);
 const IS_SERVERLESS_RUNTIME = Boolean(env.VERCEL || env.VERCEL_ENV || env.NOW_REGION || env.AWS_REGION);
+const MAX_TRANSCRIBE_MEDIA_BYTES = 140 * 1024 * 1024;
+const YOUTUBE_INFO_ENDPOINT = 'https://www.youtube.com/get_video_info';
+const YOUTUBE_WATCH_ENDPOINT = 'https://www.youtube.com/watch';
+const YOUTUBE_FETCH_USER_AGENT = env.YOUTUBE_FETCH_USER_AGENT || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
 let ytDlpHealthState = {
   checkedAt: 0,
@@ -129,6 +133,277 @@ function isYoutubeUrl(rawUrl) {
   } catch (_error) {
     return false;
   }
+}
+
+function extractYoutubeVideoId(rawUrl) {
+  try {
+    const parsed = new URL(String(rawUrl || '').trim());
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    let candidate = '';
+    if (host === 'youtu.be') {
+      candidate = parsed.pathname.split('/').filter(Boolean)[0] || '';
+    } else if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
+      if (parsed.pathname === '/watch') {
+        candidate = parsed.searchParams.get('v') || '';
+      } else {
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        if (parts[0] === 'embed' || parts[0] === 'shorts' || parts[0] === 'live' || parts[0] === 'v') {
+          candidate = parts[1] || '';
+        }
+      }
+    }
+    candidate = String(candidate || '').trim();
+    if (!/^[a-zA-Z0-9_-]{6,20}$/.test(candidate)) return '';
+    return candidate;
+  } catch (_error) {
+    return '';
+  }
+}
+
+function formatDurationStringFromSeconds(totalSeconds) {
+  const safe = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  if (hours > 0) return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function extractJsonObjectAfterMarker(raw, marker) {
+  const source = String(raw || '');
+  const markerIndex = source.indexOf(marker);
+  if (markerIndex < 0) return '';
+  const start = source.indexOf('{', markerIndex + marker.length);
+  if (start < 0) return '';
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < source.length; i += 1) {
+    const char = source[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (char === '{') depth += 1;
+    if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return source.slice(start, i + 1);
+      }
+    }
+  }
+
+  return '';
+}
+
+async function fetchYoutubePlayerResponse(videoId) {
+  const commonHeaders = {
+    'User-Agent': YOUTUBE_FETCH_USER_AGENT,
+    Accept: '*/*',
+    Referer: 'https://www.youtube.com/'
+  };
+
+  try {
+    const infoUrl = `${YOUTUBE_INFO_ENDPOINT}?video_id=${encodeURIComponent(videoId)}&el=detailpage&hl=en`;
+    const infoResponse = await fetch(infoUrl, {
+      method: 'GET',
+      headers: commonHeaders
+    });
+    if (infoResponse.ok) {
+      const infoText = await infoResponse.text();
+      const infoParams = new URLSearchParams(infoText);
+      const playerResponseRaw = infoParams.get('player_response');
+      if (playerResponseRaw) {
+        const payload = JSON.parse(playerResponseRaw);
+        if (payload && typeof payload === 'object') return payload;
+      }
+    }
+  } catch (_error) {
+    // fallback below
+  }
+
+  const watchUrl = `${YOUTUBE_WATCH_ENDPOINT}?v=${encodeURIComponent(videoId)}&hl=en`;
+  const watchResponse = await fetch(watchUrl, {
+    method: 'GET',
+    headers: commonHeaders
+  });
+  if (!watchResponse.ok) {
+    throw new Error(`YouTube watch request falhou (HTTP ${watchResponse.status}).`);
+  }
+  const watchHtml = await watchResponse.text();
+  const rawPlayerJson = extractJsonObjectAfterMarker(watchHtml, 'ytInitialPlayerResponse =');
+  if (!rawPlayerJson) {
+    throw new Error('Não foi possível extrair player response do YouTube.');
+  }
+
+  try {
+    return JSON.parse(rawPlayerJson);
+  } catch (_error) {
+    throw new Error('YouTube retornou player response inválido.');
+  }
+}
+
+function resolveYoutubeStreamUrl(format) {
+  if (format && typeof format.url === 'string' && format.url.trim()) {
+    return format.url.trim();
+  }
+  const cipher = String(format?.signatureCipher || format?.cipher || '').trim();
+  if (!cipher) return '';
+  const params = new URLSearchParams(cipher);
+  const rawUrl = params.get('url');
+  if (!rawUrl) return '';
+
+  // Signature decipher is intentionally not implemented here.
+  if (params.get('s')) return '';
+
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch (_error) {
+    return '';
+  }
+
+  const sig = params.get('sig') || params.get('signature');
+  if (sig) {
+    parsed.searchParams.set(params.get('sp') || 'signature', sig);
+  }
+
+  return parsed.toString();
+}
+
+function pickYoutubeAudioFormat(playerResponse) {
+  const streamData = playerResponse?.streamingData || {};
+  const candidates = [...(Array.isArray(streamData.adaptiveFormats) ? streamData.adaptiveFormats : []), ...(Array.isArray(streamData.formats) ? streamData.formats : [])]
+    .filter((format) => {
+      const mime = String(format?.mimeType || '').toLowerCase();
+      return mime.includes('audio/');
+    })
+    .map((format) => {
+      const url = resolveYoutubeStreamUrl(format);
+      if (!url) return null;
+      const mime = String(format?.mimeType || '').split(';')[0].trim().toLowerCase();
+      const bitrate = Number(format?.bitrate || 0);
+      const contentLength = Number(format?.contentLength || 0);
+      const mp4Boost = mime.includes('mp4') ? 50_000_000 : 0;
+      const bitrateBias = bitrate > 0 && bitrate <= 192000 ? 10_000_000 : 0;
+      const score = mp4Boost + bitrateBias + bitrate;
+      return {
+        url,
+        mimeType: mime || 'audio/mp4',
+        bitrate,
+        contentLength: Number.isFinite(contentLength) && contentLength > 0 ? contentLength : 0,
+        score
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score);
+
+  return candidates[0] || null;
+}
+
+function buildYoutubeMetadataFromPlayerResponse(playerResponse, youtubeUrl, fallbackVideoId = '') {
+  const details = playerResponse?.videoDetails || {};
+  const micro = playerResponse?.microformat?.playerMicroformatRenderer || {};
+  const videoId = String(details.videoId || fallbackVideoId || '').trim();
+  const duration = parseDurationToSeconds(details.lengthSeconds || micro.lengthSeconds || micro.lengthSecondsText);
+  if (!Number.isFinite(duration) || duration <= 0) {
+    const error = new Error('Não foi possível determinar a duração do vídeo.');
+    error.statusCode = 422;
+    throw error;
+  }
+
+  let thumbnail = '';
+  if (Array.isArray(details.thumbnail?.thumbnails) && details.thumbnail.thumbnails.length) {
+    thumbnail = String(details.thumbnail.thumbnails[details.thumbnail.thumbnails.length - 1]?.url || '').trim();
+  } else if (Array.isArray(micro.thumbnail?.thumbnails) && micro.thumbnail.thumbnails.length) {
+    thumbnail = String(micro.thumbnail.thumbnails[micro.thumbnail.thumbnails.length - 1]?.url || '').trim();
+  }
+
+  return {
+    ok: true,
+    videoId: videoId || null,
+    title: String(details.title || micro.title?.simpleText || '').trim() || null,
+    duration,
+    durationString: formatDurationStringFromSeconds(duration),
+    uploader: String(details.author || micro.ownerChannelName || '').trim() || null,
+    thumbnail: thumbnail || null,
+    webpageUrl: String(micro.urlCanonical || micro.ownerProfileUrl || youtubeUrl).trim(),
+    extractor: 'YouTubeHTTP'
+  };
+}
+
+async function fetchYoutubeMetadataViaHttp(youtubeUrl) {
+  const videoId = extractYoutubeVideoId(youtubeUrl);
+  if (!videoId) {
+    const error = new Error('Não foi possível extrair o videoId da URL do YouTube.');
+    error.statusCode = 400;
+    throw error;
+  }
+  const playerResponse = await fetchYoutubePlayerResponse(videoId);
+  return buildYoutubeMetadataFromPlayerResponse(playerResponse, youtubeUrl, videoId);
+}
+
+async function downloadYoutubeAudioViaHttp(youtubeUrl) {
+  const videoId = extractYoutubeVideoId(youtubeUrl);
+  if (!videoId) {
+    throw new Error('Não foi possível extrair o videoId da URL do YouTube.');
+  }
+
+  const playerResponse = await fetchYoutubePlayerResponse(videoId);
+  const selected = pickYoutubeAudioFormat(playerResponse);
+  if (!selected?.url) {
+    throw new Error('Não foi possível obter stream de áudio direto deste vídeo no ambiente atual.');
+  }
+
+  const response = await fetch(selected.url, {
+    method: 'GET',
+    headers: {
+      'User-Agent': YOUTUBE_FETCH_USER_AGENT,
+      Referer: 'https://www.youtube.com/'
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Falha ao baixar stream de áudio do YouTube (HTTP ${response.status}).`);
+  }
+
+  const declaredLength = Number(response.headers.get('content-length') || selected.contentLength || 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_TRANSCRIBE_MEDIA_BYTES) {
+    throw new Error(
+      `Áudio muito grande para transcrição (${Math.round(declaredLength / 1024 / 1024)}MB). ` +
+      'Use um trecho menor do vídeo para manter abaixo de ~140MB.'
+    );
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  if (!buffer.length) {
+    throw new Error('Stream de áudio do YouTube retornou vazio.');
+  }
+  if (buffer.length > MAX_TRANSCRIBE_MEDIA_BYTES) {
+    throw new Error(
+      `Áudio muito grande para transcrição (${Math.round(buffer.length / 1024 / 1024)}MB). ` +
+      'Use um trecho menor do vídeo para manter abaixo de ~140MB.'
+    );
+  }
+
+  const mimeType = selected.mimeType || inferMimeTypeFromName(`audio-${videoId}.m4a`, 'audio/mp4');
+  const extension = mimeType.includes('webm') ? 'webm' : mimeType.includes('mpeg') ? 'mp3' : 'm4a';
+
+  return {
+    buffer,
+    fileName: `youtube-${videoId}.${extension}`,
+    mimeType
+  };
 }
 
 function runCommand(command, args, options = {}) {
@@ -256,6 +531,7 @@ async function getYtDlpHealth(force = false) {
 async function buildHealthPayload() {
   const ytDlp = await getYtDlpHealth(false);
   const hasElevenLabsKey = Boolean(ELEVENLABS_API_KEY);
+  const youtubeHttpFallbackReady = true;
   return {
     ok: true,
     service: 'jv-video-studio',
@@ -265,8 +541,9 @@ async function buildHealthPayload() {
     hasOpenAiKey: Boolean(OPENAI_API_KEY),
     defaultAgentId: ELEVENLABS_AGENT_ID || null,
     directTranscribeReady: hasElevenLabsKey,
-    youtubeMetadataReady: ytDlp.available,
-    youtubeTranscribeReady: hasElevenLabsKey && ytDlp.available,
+    youtubeMetadataReady: ytDlp.available || youtubeHttpFallbackReady,
+    youtubeTranscribeReady: hasElevenLabsKey && (ytDlp.available || youtubeHttpFallbackReady),
+    youtubeFallbackReady: youtubeHttpFallbackReady,
     imageGenerationReady: Boolean(OPENAI_API_KEY),
     ytDlp: {
       configured: ytDlp.command,
@@ -358,7 +635,7 @@ async function generateImageWithOpenAI({ prompt, apiKey, model, size }) {
   };
 }
 
-async function fetchYoutubeMetadata(youtubeUrl) {
+async function fetchYoutubeMetadataWithYtDlp(youtubeUrl) {
   if (!isYoutubeUrl(youtubeUrl)) {
     const error = new Error('youtubeUrl inválida.');
     error.statusCode = 400;
@@ -416,7 +693,38 @@ async function fetchYoutubeMetadata(youtubeUrl) {
   };
 }
 
-async function downloadYoutubeAudio(youtubeUrl) {
+async function fetchYoutubeMetadata(youtubeUrl) {
+  if (!isYoutubeUrl(youtubeUrl)) {
+    const error = new Error('youtubeUrl inválida.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const ytDlpHealth = await getYtDlpHealth(false);
+  const errors = [];
+
+  if (ytDlpHealth.available) {
+    try {
+      return await fetchYoutubeMetadataWithYtDlp(youtubeUrl);
+    } catch (error) {
+      errors.push(error?.message || String(error));
+    }
+  } else if (!IS_SERVERLESS_RUNTIME) {
+    errors.push(`yt-dlp indisponível (${ytDlpHealth.command}).`);
+  }
+
+  try {
+    return await fetchYoutubeMetadataViaHttp(youtubeUrl);
+  } catch (error) {
+    const wrapped = new Error(
+      `Falha ao ler metadados do YouTube via fallback HTTP.${errors.length ? ` Detalhes: ${errors.join(' | ')}` : ''} ${error?.message || ''}`.trim()
+    );
+    wrapped.statusCode = error?.statusCode || 502;
+    throw wrapped;
+  }
+}
+
+async function downloadYoutubeAudioWithYtDlp(youtubeUrl) {
   if (!isYoutubeUrl(youtubeUrl)) {
     throw new Error('youtubeUrl inválida para download automático.');
   }
@@ -460,7 +768,7 @@ async function downloadYoutubeAudio(youtubeUrl) {
       }
     }
 
-    if (chosenStat.size > 140 * 1024 * 1024) {
+    if (chosenStat.size > MAX_TRANSCRIBE_MEDIA_BYTES) {
       throw new Error(
         `Áudio muito grande para transcrição (${Math.round(chosenStat.size / 1024 / 1024)}MB). ` +
         'Use um trecho menor do vídeo para manter abaixo de ~140MB.'
@@ -489,6 +797,33 @@ async function downloadYoutubeAudio(youtubeUrl) {
   }
 }
 
+async function downloadYoutubeAudio(youtubeUrl) {
+  if (!isYoutubeUrl(youtubeUrl)) {
+    throw new Error('youtubeUrl inválida para download automático.');
+  }
+
+  const ytDlpHealth = await getYtDlpHealth(false);
+  const errors = [];
+
+  if (ytDlpHealth.available) {
+    try {
+      return await downloadYoutubeAudioWithYtDlp(youtubeUrl);
+    } catch (error) {
+      errors.push(error?.message || String(error));
+    }
+  } else if (!IS_SERVERLESS_RUNTIME) {
+    errors.push(`yt-dlp indisponível (${ytDlpHealth.command}).`);
+  }
+
+  try {
+    return await downloadYoutubeAudioViaHttp(youtubeUrl);
+  } catch (error) {
+    throw new Error(
+      `Falha ao baixar áudio do YouTube no ambiente atual.${errors.length ? ` Detalhes: ${errors.join(' | ')}` : ''} ${error?.message || ''}`.trim()
+    );
+  }
+}
+
 async function transcribeBufferWithElevenLabs({
   mediaBuffer,
   fileName,
@@ -499,7 +834,7 @@ async function transcribeBufferWithElevenLabs({
   if (!mediaBuffer || !mediaBuffer.length) {
     throw new Error('Arquivo vazio para transcrição.');
   }
-  if (mediaBuffer.length > 140 * 1024 * 1024) {
+  if (mediaBuffer.length > MAX_TRANSCRIBE_MEDIA_BYTES) {
     throw new Error('Arquivo muito grande. Envie no máximo ~140MB por requisição.');
   }
 
@@ -941,7 +1276,7 @@ function startLocalServer() {
       ? '[server] OPENAI_API_KEY detected: /api/complement/image enabled with env fallback'
       : '[server] OPENAI_API_KEY missing: Complement image generation expects key from UI request');
     // eslint-disable-next-line no-console
-    console.log(`[server] YouTube auto-transcribe uses ${YT_DLP_BIN} (configure YT_DLP_PATH if needed)`);
+    console.log(`[server] YouTube auto-transcribe: yt-dlp=${YT_DLP_BIN} with HTTP fallback enabled`);
   });
 
   return server;
