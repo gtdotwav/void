@@ -796,6 +796,19 @@
                                         Envie um link para transcrição automática. Use Reajustar para atualizar cortes e legendas.
                                     </p>
                                 </div>
+                                <div class="px-4 py-2 border-b border-white/5 bg-black/20">
+                                    <details>
+                                        <summary class="text-[11px] text-white/55 cursor-pointer hover:text-white transition-colors">YouTube cookies (opcional para vídeos com bot-check)</summary>
+                                        <div class="mt-2 space-y-2">
+                                            <textarea id="youtubeCookiesInput" rows="3" placeholder="Cole cookies do YouTube (Netscape cookies.txt, JSON exportado ou header Cookie)." class="w-full bg-black/60 border border-white/15 rounded-lg px-2 py-2 text-white/80 text-[11px] font-mono outline-none focus:border-accent/50"></textarea>
+                                            <div class="flex items-center gap-2">
+                                                <button id="saveYoutubeCookiesBtn" class="text-[11px] px-2.5 py-1.5 rounded border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Salvar local</button>
+                                                <button id="clearYoutubeCookiesBtn" class="text-[11px] px-2.5 py-1.5 rounded border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors">Limpar</button>
+                                                <span id="youtubeCookiesStatus" class="text-[11px] text-white/40">Salvo apenas neste navegador.</span>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
 
                                 <div class="p-4 overflow-y-auto space-y-3 custom-scrollbar flex-grow" id="captionList">
                                     <div class="flex gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-text">
@@ -1487,6 +1500,10 @@
             const captionList = document.getElementById('captionList');
             const transcribeCaptionsBtn = document.getElementById('transcribeCaptionsBtn');
             const transcribeStatus = document.getElementById('transcribeStatus');
+            const youtubeCookiesInput = document.getElementById('youtubeCookiesInput');
+            const saveYoutubeCookiesBtn = document.getElementById('saveYoutubeCookiesBtn');
+            const clearYoutubeCookiesBtn = document.getElementById('clearYoutubeCookiesBtn');
+            const youtubeCookiesStatus = document.getElementById('youtubeCookiesStatus');
             const filterBtns = Array.from(document.querySelectorAll('.filter-btn'));
             const themeFilterSelect = document.getElementById('themeFilterSelect');
             const subjectFilterSelect = document.getElementById('subjectFilterSelect');
@@ -1630,6 +1647,7 @@
             const DEFAULT_ELEVEN_AGENT_ID = 'agent_3701khd9583qe1ctjzvqxtz38cfa';
             const COMPLEMENT_PROVIDER_STORAGE_KEY = 'jv_complement_provider';
             const COMPLEMENT_OPENAI_KEY_STORAGE_KEY = 'jv_complement_openai_key';
+            const YOUTUBE_COOKIES_STORAGE_KEY = 'jv_youtube_cookies';
 
             const clipThemes = [
                 { title: 'Open With the Bold Claim', hook: 'Hook: Bold Claim' },
@@ -1652,6 +1670,7 @@
                 youtubeLastErrorCode: null,
                 youtubePlaybackBlocked: false,
                 youtubePlaybackBlockReason: '',
+                youtubeCookies: '',
                 captionsSource: 'template',
                 exportCount: 0,
                 packCount: 0,
@@ -1719,6 +1738,7 @@
                     online: false,
                     hasElevenLabsKey: false,
                     hasOpenAiKey: false,
+                    hasYoutubeCookies: false,
                     directTranscribeReady: false,
                     youtubeTranscribeReady: false,
                     imageGenerationReady: false,
@@ -1778,6 +1798,15 @@
                 if (tone === 'error') transcribeStatus.classList.add('text-red-300');
                 else if (tone === 'success') transcribeStatus.classList.add('text-accent');
                 else transcribeStatus.classList.add('text-white/50');
+            }
+
+            function setYoutubeCookiesStatus(message, tone = 'muted') {
+                if (!youtubeCookiesStatus) return;
+                youtubeCookiesStatus.textContent = message || '';
+                youtubeCookiesStatus.classList.remove('text-red-300', 'text-accent', 'text-white/40');
+                if (tone === 'error') youtubeCookiesStatus.classList.add('text-red-300');
+                else if (tone === 'success') youtubeCookiesStatus.classList.add('text-accent');
+                else youtubeCookiesStatus.classList.add('text-white/40');
             }
 
             function setAgentStatus(message, tone = 'muted') {
@@ -1864,6 +1893,52 @@
                 appState.complement.apiKey = getSavedComplementApiKey(appState.complement.provider);
                 complementProviderSelect.value = appState.complement.provider;
                 complementApiKeyInput.value = appState.complement.apiKey;
+            }
+
+            function getSavedYoutubeCookies() {
+                try {
+                    const raw = localStorage.getItem(YOUTUBE_COOKIES_STORAGE_KEY);
+                    return raw ? String(raw) : '';
+                } catch (_error) {
+                    return '';
+                }
+            }
+
+            function saveYoutubeCookies(rawCookies) {
+                try {
+                    localStorage.setItem(YOUTUBE_COOKIES_STORAGE_KEY, String(rawCookies || ''));
+                } catch (_error) {
+                    // noop
+                }
+            }
+
+            function clearSavedYoutubeCookies() {
+                try {
+                    localStorage.removeItem(YOUTUBE_COOKIES_STORAGE_KEY);
+                } catch (_error) {
+                    // noop
+                }
+            }
+
+            function loadYoutubeCookieSettings() {
+                const saved = getSavedYoutubeCookies();
+                appState.youtubeCookies = saved;
+                if (youtubeCookiesInput) {
+                    youtubeCookiesInput.value = saved;
+                }
+                if (saved.trim()) {
+                    setYoutubeCookiesStatus('Cookies salvos localmente e prontos para transcrição.', 'success');
+                } else {
+                    setYoutubeCookiesStatus('Salvo apenas neste navegador (opcional).', 'muted');
+                }
+            }
+
+            function getResolvedYoutubeCookies() {
+                if (youtubeCookiesInput) {
+                    const typed = String(youtubeCookiesInput.value || '').trim();
+                    if (typed) return typed;
+                }
+                return String(appState.youtubeCookies || '').trim();
             }
 
             function getClipTranscriptContext(clip, maxWords = 42) {
@@ -2094,6 +2169,8 @@
                 lines.push(appState.backend.online ? 'Backend: online' : 'Backend: offline');
                 if (appState.backend.runtime) lines.push(`Runtime: ${appState.backend.runtime}`);
                 lines.push(appState.backend.hasElevenLabsKey ? 'ElevenLabs key: OK' : 'ElevenLabs key: ausente');
+                lines.push(appState.backend.hasYoutubeCookies ? 'YouTube cookies (backend): OK' : 'YouTube cookies (backend): ausente');
+                lines.push(getResolvedYoutubeCookies() ? 'YouTube cookies (browser): OK' : 'YouTube cookies (browser): ausente');
                 lines.push(appState.backend.keyVaultReady ? 'Key Vault: pronto' : 'Key Vault: pendente');
                 lines.push(appState.backend.imageGenerationReady ? 'Complement image API: pronta' : 'Complement image API: usando key local da aba');
                 lines.push(appState.backend.videoEditReady ? `Video runtime: OK (${appState.backend.ffmpegBin || 'ffmpeg'})` : 'Video runtime: ffmpeg indisponível');
@@ -2280,6 +2357,7 @@
                         appState.backend.online = true;
                         appState.backend.hasElevenLabsKey = Boolean(payload.hasElevenLabsKey);
                         appState.backend.hasOpenAiKey = Boolean(payload.hasOpenAiKey);
+                        appState.backend.hasYoutubeCookies = Boolean(payload.hasYoutubeCookies);
                         appState.backend.directTranscribeReady = Boolean(payload.directTranscribeReady);
                         appState.backend.youtubeTranscribeReady = Boolean(payload.youtubeTranscribeReady);
                         appState.backend.imageGenerationReady = Boolean(payload.imageGenerationReady);
@@ -2302,6 +2380,9 @@
                                 problems.push('yt-dlp ausente para YouTube');
                             }
                         }
+                        if (appState.sourceKind === 'youtube' && !appState.backend.hasYoutubeCookies && !getResolvedYoutubeCookies()) {
+                            problems.push('YouTube cookies ausentes para vídeos protegidos por bot-check');
+                        }
                         if (!appState.backend.videoEditReady && !isHostedDeploymentContext()) {
                             problems.push('ffmpeg ausente para patch/render runtime');
                         }
@@ -2316,6 +2397,7 @@
                         appState.backend.online = false;
                         appState.backend.hasElevenLabsKey = false;
                         appState.backend.hasOpenAiKey = false;
+                        appState.backend.hasYoutubeCookies = false;
                         appState.backend.directTranscribeReady = false;
                         appState.backend.youtubeTranscribeReady = false;
                         appState.backend.imageGenerationReady = false;
@@ -2525,6 +2607,16 @@
                 });
             }
 
+            function encodeBase64Utf8(value) {
+                const text = String(value || '');
+                if (!text) return '';
+                try {
+                    return btoa(unescape(encodeURIComponent(text)));
+                } catch (_error) {
+                    return '';
+                }
+            }
+
             async function getMediaBlobForTranscription() {
                 if (appState.sourceKind === 'upload' && fileInput.files.length > 0) {
                     return fileInput.files[0];
@@ -2548,11 +2640,15 @@
 
             async function buildTranscribeRequestPayload() {
                 if (appState.sourceKind === 'youtube') {
-                    return {
+                    const payload = {
                         youtubeUrl: appState.sourceSrc,
                         modelId: 'scribe_v1',
                         allowSyntheticFallback: false
                     };
+                    const youtubeCookies = getResolvedYoutubeCookies();
+                    const youtubeCookiesBase64 = encodeBase64Utf8(youtubeCookies);
+                    if (youtubeCookiesBase64) payload.youtubeCookiesBase64 = youtubeCookiesBase64;
+                    return payload;
                 }
 
                 const mediaBlob = await getMediaBlobForTranscription();
@@ -2745,7 +2841,13 @@
                         addChatMessage('assistant', 'Reajuste concluído. As captions foram resincronizadas com os cortes.');
                     }
                 } catch (error) {
-                    setTranscribeStatus(error.message || 'Falha ao transcrever.', 'error');
+                    const rawMessage = String(error && error.message ? error.message : 'Falha ao transcrever.');
+                    const needsCookiesHint = /sign in to confirm you'?re not a bot|bot-check/i.test(rawMessage);
+                    const hasLocalCookies = Boolean(getResolvedYoutubeCookies());
+                    const message = needsCookiesHint && !hasLocalCookies
+                        ? `${rawMessage} Dica: abra "YouTube cookies" na aba Captions, cole os cookies e tente novamente.`
+                        : rawMessage;
+                    setTranscribeStatus(message, 'error');
                 } finally {
                     appState.transcribeInFlight = false;
                     transcribeCaptionsBtn.disabled = false;
@@ -6553,6 +6655,24 @@
             transcribeCaptionsBtn.addEventListener('click', () => {
                 handleTranscribeCaptions().catch(() => {});
             });
+            saveYoutubeCookiesBtn.addEventListener('click', () => {
+                const raw = String(youtubeCookiesInput.value || '').trim();
+                if (!raw) {
+                    setYoutubeCookiesStatus('Cole as cookies antes de salvar.', 'error');
+                    return;
+                }
+                appState.youtubeCookies = raw;
+                saveYoutubeCookies(raw);
+                setYoutubeCookiesStatus('Cookies salvos localmente. Próxima transcrição já envia para o backend.', 'success');
+                refreshBackendHealth(true).catch(() => {});
+            });
+            clearYoutubeCookiesBtn.addEventListener('click', () => {
+                appState.youtubeCookies = '';
+                youtubeCookiesInput.value = '';
+                clearSavedYoutubeCookies();
+                setYoutubeCookiesStatus('Cookies locais removidos.', 'muted');
+                refreshBackendHealth(true).catch(() => {});
+            });
 
             commandSendBtn.addEventListener('click', async () => {
                 const text = commandInput.value.trim();
@@ -6664,6 +6784,7 @@
             renderAutomationNodesUi();
             syncAutomationNodePanel();
             loadComplementSettings();
+            loadYoutubeCookieSettings();
             switchEditorTab('captions');
             syncCaptionStyleControls();
             updateAudioUi();
@@ -6671,6 +6792,9 @@
             updateAgentBadge();
             setAgentStatus('Agent disconnected.', 'muted');
             setComplementStatus('Defina a key e peça para gerar imagens de preenchimento.', 'muted');
+            if (!appState.youtubeCookies.trim()) {
+                setYoutubeCookiesStatus('Salvo apenas neste navegador (opcional).', 'muted');
+            }
             renderComplementImageList();
             applyCaptionStyle();
             addChatMessage('assistant', 'Command center online. Digite "ajuda" para seguir o passo a passo do fluxo.');
