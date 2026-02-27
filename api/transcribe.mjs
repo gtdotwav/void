@@ -1,7 +1,7 @@
 import { handleTranscribe, sendJson, setCorsHeaders } from '../server.mjs';
 
 export const config = {
-  maxDuration: 60
+  maxDuration: 300
 };
 
 export default async function handler(req, res) {

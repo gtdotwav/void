@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, readFileSync } from 'node:fs';
-import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { cwd, env } from 'node:process';
@@ -48,6 +48,7 @@ const FFMPEG_HEALTH_TIMEOUT_MS = Number(env.FFMPEG_HEALTH_TIMEOUT_MS || 3500);
 const DATA_ROOT = IS_SERVERLESS_RUNTIME ? join(tmpdir(), 'jv-video-studio') : join(ROOT, 'data');
 const MAX_REMOTE_SOURCE_BYTES = Number(env.MAX_REMOTE_SOURCE_BYTES || 600 * 1024 * 1024);
 const RENDER_SEGMENT_MIN_SEC = 0.04;
+const SERVERLESS_YT_DLP_PATH = env.YT_DLP_SERVERLESS_PATH || join(tmpdir(), 'yt-dlp');
 
 const keyVault = createKeyVault({ dataRoot: DATA_ROOT, envVars: env });
 const automationEngine = createAutomationEngine({ dataRoot: DATA_ROOT });
@@ -59,6 +60,7 @@ let ytDlpHealthState = {
   command: YT_DLP_BIN
 };
 let ytDlpHealthPromise = null;
+let ytDlpRuntimeBinaryPromise = null;
 let ffmpegHealthState = {
   checkedAt: 0,
   available: false,
@@ -798,20 +800,63 @@ function runCommand(command, args, options = {}) {
   });
 }
 
+async function ensureServerlessYtDlpBinary() {
+  if (!IS_SERVERLESS_RUNTIME) return '';
+  if (existsSync(SERVERLESS_YT_DLP_PATH)) {
+    return SERVERLESS_YT_DLP_PATH;
+  }
+  if (ytDlpRuntimeBinaryPromise) return ytDlpRuntimeBinaryPromise;
+
+  ytDlpRuntimeBinaryPromise = (async () => {
+    const module = await import('yt-dlp-wrap');
+    const YTDlpWrap = module?.default?.default || module?.default || module;
+    if (!YTDlpWrap || typeof YTDlpWrap.downloadFromGithub !== 'function') {
+      throw new Error('yt-dlp-wrap indisponível para download de binário.');
+    }
+
+    await YTDlpWrap.downloadFromGithub(SERVERLESS_YT_DLP_PATH);
+    await chmod(SERVERLESS_YT_DLP_PATH, 0o755).catch(() => {});
+    if (!existsSync(SERVERLESS_YT_DLP_PATH)) {
+      throw new Error('Download do binário yt-dlp falhou no runtime serverless.');
+    }
+    return SERVERLESS_YT_DLP_PATH;
+  })().finally(() => {
+    ytDlpRuntimeBinaryPromise = null;
+  });
+
+  return ytDlpRuntimeBinaryPromise;
+}
+
 async function runYtDlp(args, options = {}) {
   const attempts = [];
-  if (YT_DLP_BIN && YT_DLP_BIN !== 'yt-dlp') {
-    attempts.push({ command: YT_DLP_BIN, args });
-  } else {
-    attempts.push({ command: 'yt-dlp', args });
-    attempts.push({ command: 'python3', args: ['-m', 'yt_dlp', ...args] });
-    attempts.push({ command: 'python', args: ['-m', 'yt_dlp', ...args] });
+  const pushAttempt = (command, nextArgs = args, bootstrapError = null) => {
+    if (!command) return;
+    if (attempts.some((entry) => entry.command === command)) return;
+    attempts.push({ command, args: nextArgs, bootstrapError });
+  };
+
+  if (IS_SERVERLESS_RUNTIME) {
+    try {
+      const runtimeBinary = await ensureServerlessYtDlpBinary();
+      pushAttempt(runtimeBinary);
+    } catch (error) {
+      pushAttempt('yt-dlp(serverless-bootstrap)', args, error);
+    }
   }
+  if (YT_DLP_BIN && YT_DLP_BIN !== 'yt-dlp') pushAttempt(YT_DLP_BIN);
+  pushAttempt('yt-dlp');
+  pushAttempt('python3', ['-m', 'yt_dlp', ...args]);
+  pushAttempt('python', ['-m', 'yt_dlp', ...args]);
 
   let lastError = null;
   for (const attempt of attempts) {
+    if (attempt.bootstrapError) {
+      lastError = attempt.bootstrapError;
+      continue;
+    }
     try {
-      return await runCommand(attempt.command, attempt.args, options);
+      const result = await runCommand(attempt.command, attempt.args, options);
+      return { ...result, command: attempt.command };
     } catch (error) {
       lastError = error;
       if (error && error.code === 'ENOENT') continue;
@@ -1628,16 +1673,6 @@ async function executeIncrementalRenderRuntime(payload) {
 }
 
 async function getYtDlpHealth(force = false) {
-  if (IS_SERVERLESS_RUNTIME) {
-    ytDlpHealthState = {
-      checkedAt: Date.now(),
-      available: false,
-      detail: 'yt-dlp disabled in serverless runtime',
-      command: YT_DLP_BIN
-    };
-    return ytDlpHealthState;
-  }
-
   const now = Date.now();
   if (!force && ytDlpHealthState.checkedAt && now - ytDlpHealthState.checkedAt < YT_DLP_HEALTH_TTL_MS) {
     return ytDlpHealthState;
@@ -1651,18 +1686,19 @@ async function getYtDlpHealth(force = false) {
         .split(/\r?\n/)
         .map((line) => line.trim())
         .find(Boolean) || 'version unknown';
+      const command = String(result.command || YT_DLP_BIN || 'yt-dlp');
       ytDlpHealthState = {
         checkedAt: Date.now(),
         available: true,
         detail: versionLine,
-        command: YT_DLP_BIN
+        command
       };
     } catch (error) {
       ytDlpHealthState = {
         checkedAt: Date.now(),
         available: false,
         detail: error?.message || 'yt-dlp unavailable',
-        command: YT_DLP_BIN
+        command: YT_DLP_BIN || 'yt-dlp'
       };
     } finally {
       ytDlpHealthPromise = null;
@@ -1968,7 +2004,7 @@ async function fetchYoutubeMetadata(youtubeUrl) {
     } catch (error) {
       errors.push(error?.message || String(error));
     }
-  } else if (!IS_SERVERLESS_RUNTIME) {
+  } else {
     errors.push(`yt-dlp indisponível (${ytDlpHealth.command}).`);
   }
 
@@ -2000,68 +2036,98 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl) {
   }
 
   const tempDir = await mkdtemp(join(tmpdir(), 'jv-yt-'));
-  const outTemplate = join(tempDir, 'audio.%(ext)s');
+  const attemptErrors = [];
+  const strategies = [
+    { label: 'default', extractorArgs: '' },
+    { label: 'android+ios', extractorArgs: 'youtube:player_client=android,ios' },
+    { label: 'tv+ios', extractorArgs: 'youtube:player_client=tv,ios' },
+    { label: 'web_embedded+android', extractorArgs: 'youtube:player_client=web_embedded,android' }
+  ];
 
   try {
-    await runYtDlp(
-      [
+    for (let i = 0; i < strategies.length; i += 1) {
+      const strategy = strategies[i];
+      const runDir = join(tempDir, `try-${i + 1}`);
+      await mkdir(runDir, { recursive: true });
+      const outTemplate = join(runDir, 'audio.%(ext)s');
+
+      const args = [
         '--no-playlist',
         '--no-progress',
         '--no-warnings',
         '--socket-timeout',
         '20',
+        '--extractor-retries',
+        '2',
+        '--fragment-retries',
+        '2',
+        '--retries',
+        '2',
         '--newline',
+        '--force-ipv4',
         '-f',
-        'bestaudio[abr<=128]/bestaudio[ext=m4a]/bestaudio/best',
+        'bestaudio[abr<=160]/bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best',
         '-o',
-        outTemplate,
-        youtubeUrl
-      ],
-      { timeoutMs: 240000, cwd: tempDir }
-    );
+        outTemplate
+      ];
+      if (strategy.extractorArgs) {
+        args.push('--extractor-args', strategy.extractorArgs);
+      }
+      args.push(youtubeUrl);
 
-    const files = (await readdir(tempDir))
-      .filter((name) => !name.endsWith('.part') && !name.endsWith('.ytdl'))
-      .map((name) => ({ name, abs: join(tempDir, name) }));
+      try {
+        await runYtDlp(args, { timeoutMs: 240000, cwd: runDir });
 
-    if (!files.length) {
-      throw new Error('yt-dlp não gerou arquivo de áudio.');
-    }
+        const files = (await readdir(runDir))
+          .filter((name) => !name.endsWith('.part') && !name.endsWith('.ytdl'))
+          .map((name) => ({ name, abs: join(runDir, name) }));
 
-    let chosen = files[0];
-    let chosenStat = await stat(chosen.abs);
-    for (const file of files.slice(1)) {
-      const fileStat = await stat(file.abs);
-      if (fileStat.size > chosenStat.size) {
-        chosen = file;
-        chosenStat = fileStat;
+        if (!files.length) {
+          throw new Error('yt-dlp não gerou arquivo de áudio.');
+        }
+
+        let chosen = files[0];
+        let chosenStat = await stat(chosen.abs);
+        for (const file of files.slice(1)) {
+          const fileStat = await stat(file.abs);
+          if (fileStat.size > chosenStat.size) {
+            chosen = file;
+            chosenStat = fileStat;
+          }
+        }
+
+        if (chosenStat.size > MAX_TRANSCRIBE_MEDIA_BYTES) {
+          throw new Error(
+            `Áudio muito grande para transcrição (${Math.round(chosenStat.size / 1024 / 1024)}MB). ` +
+            'Use um trecho menor do vídeo para manter abaixo de ~140MB.'
+          );
+        }
+
+        const buffer = await readFile(chosen.abs);
+        if (!buffer.length) {
+          throw new Error('Arquivo de áudio baixado está vazio.');
+        }
+
+        return {
+          buffer,
+          fileName: chosen.name,
+          mimeType: inferMimeTypeFromName(chosen.name, 'audio/mp4')
+        };
+      } catch (error) {
+        if (error && error.code === 'ENOENT') {
+          throw new Error('yt-dlp não encontrado. Instale o binário (`brew install yt-dlp`) ou `python3 -m pip install -U yt-dlp`.');
+        }
+        const stderr = String(error?.stderr || '').trim();
+        const summary = stderr ? stderr.split('\n').slice(-2).join(' | ') : '';
+        attemptErrors.push(`${strategy.label}: ${summary || error?.message || error}`);
       }
     }
 
-    if (chosenStat.size > MAX_TRANSCRIBE_MEDIA_BYTES) {
-      throw new Error(
-        `Áudio muito grande para transcrição (${Math.round(chosenStat.size / 1024 / 1024)}MB). ` +
-        'Use um trecho menor do vídeo para manter abaixo de ~140MB.'
-      );
-    }
-
-    const buffer = await readFile(chosen.abs);
-    if (!buffer.length) {
-      throw new Error('Arquivo de áudio baixado está vazio.');
-    }
-
-    return {
-      buffer,
-      fileName: chosen.name,
-      mimeType: inferMimeTypeFromName(chosen.name, 'audio/mp4')
-    };
+    throw new Error(
+      `Falha ao baixar áudio via yt-dlp.${attemptErrors.length ? ` Detalhes: ${attemptErrors.join(' | ')}` : ''}`.trim()
+    );
   } catch (error) {
-    if (error && error.code === 'ENOENT') {
-      throw new Error('yt-dlp não encontrado. Instale o binário (`brew install yt-dlp`) ou `python3 -m pip install -U yt-dlp`.');
-    }
-    const stderr = String(error?.stderr || '').trim();
-    const summary = stderr ? stderr.split('\n').slice(-2).join(' | ') : '';
-    throw new Error(summary || error.message || 'Falha ao baixar áudio do YouTube.');
+    throw new Error(error?.message || 'Falha ao baixar áudio do YouTube via yt-dlp.');
   } finally {
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
@@ -2081,7 +2147,7 @@ async function downloadYoutubeAudio(youtubeUrl) {
     } catch (error) {
       errors.push(error?.message || String(error));
     }
-  } else if (!IS_SERVERLESS_RUNTIME) {
+  } else {
     errors.push(`yt-dlp indisponível (${ytDlpHealth.command}).`);
   }
 
