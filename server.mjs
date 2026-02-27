@@ -31,6 +31,8 @@ const PORT = Number(env.PORT || 8787);
 const ELEVENLABS_API_KEY = env.ELEVENLABS_API_KEY || '';
 const ELEVENLABS_AGENT_ID = env.ELEVENLABS_AGENT_ID || 'agent_3701khd9583qe1ctjzvqxtz38cfa';
 const OPENAI_API_KEY = env.OPENAI_API_KEY || '';
+const YOUTUBE_COOKIES = env.YOUTUBE_COOKIES || env.YT_DLP_COOKIES || '';
+const YOUTUBE_COOKIES_BASE64 = env.YOUTUBE_COOKIES_BASE64 || '';
 const YT_DLP_BIN = env.YT_DLP_PATH || 'yt-dlp';
 const ELEVENLABS_ENDPOINT = 'https://api.elevenlabs.io/v1/speech-to-text';
 const ELEVENLABS_SIGNED_URL_ENDPOINT = 'https://api.elevenlabs.io/v1/convai/conversation/get-signed-url';
@@ -220,6 +222,96 @@ function buildYoutubeVideoIdHint(videoId) {
     return `Dica: IDs do YouTube diferenciam maiúsculas e minúsculas. Revise o ID "${id}" (I maiúsculo e l minúsculo são diferentes).`;
   }
   return '';
+}
+
+function decodeBase64Utf8(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    return Buffer.from(raw, 'base64').toString('utf8');
+  } catch (_error) {
+    return '';
+  }
+}
+
+function cookieHeaderToNetscape(rawCookieHeader, domain = '.youtube.com') {
+  const header = String(rawCookieHeader || '').trim();
+  if (!header) return '';
+  const pairs = header.split(';').map((part) => part.trim()).filter(Boolean);
+  if (!pairs.length) return '';
+  const lines = ['# Netscape HTTP Cookie File'];
+  pairs.forEach((pair) => {
+    const eqIndex = pair.indexOf('=');
+    if (eqIndex <= 0) return;
+    const name = pair.slice(0, eqIndex).trim();
+    const value = pair.slice(eqIndex + 1).trim();
+    if (!name) return;
+    lines.push(`${domain}\tTRUE\t/\tTRUE\t2147483647\t${name}\t${value}`);
+  });
+  return `${lines.join('\n')}\n`;
+}
+
+function cookieJsonArrayToNetscape(rawJson) {
+  let parsed;
+  try {
+    parsed = JSON.parse(String(rawJson || '').trim());
+  } catch (_error) {
+    return '';
+  }
+  if (!Array.isArray(parsed) || !parsed.length) return '';
+
+  const lines = ['# Netscape HTTP Cookie File'];
+  parsed.forEach((entry) => {
+    if (!entry || typeof entry !== 'object') return;
+    const domain = String(entry.domain || '.youtube.com').trim() || '.youtube.com';
+    const path = String(entry.path || '/').trim() || '/';
+    const name = String(entry.name || '').trim();
+    const value = String(entry.value || '').trim();
+    const secure = entry.secure ? 'TRUE' : 'FALSE';
+    const expires = Number(entry.expirationDate || entry.expires || 2147483647);
+    if (!name) return;
+    lines.push(`${domain}\tTRUE\t${path}\t${secure}\t${Number.isFinite(expires) ? Math.max(0, Math.floor(expires)) : 2147483647}\t${name}\t${value}`);
+  });
+
+  return lines.length > 1 ? `${lines.join('\n')}\n` : '';
+}
+
+function normalizeYoutubeCookiesToNetscape(rawCookies) {
+  const source = String(rawCookies || '').trim();
+  if (!source) return '';
+  if (source.includes('\t') && source.includes('\n')) {
+    return source.startsWith('# Netscape HTTP Cookie File') ? source : `# Netscape HTTP Cookie File\n${source}`;
+  }
+
+  const jsonConverted = cookieJsonArrayToNetscape(source);
+  if (jsonConverted) return jsonConverted;
+  return cookieHeaderToNetscape(source);
+}
+
+async function resolveYoutubeCookiesRaw(overrideCookies = '') {
+  const directOverride = String(overrideCookies || '').trim();
+  if (directOverride) return directOverride;
+
+  const envDirect = String(YOUTUBE_COOKIES || '').trim();
+  if (envDirect) return envDirect;
+
+  const envDecoded = decodeBase64Utf8(YOUTUBE_COOKIES_BASE64);
+  if (envDecoded) return envDecoded;
+
+  const vaultCookie = await keyVault.resolveProviderKeyValue('youtube').catch(() => '');
+  return String(vaultCookie || '').trim();
+}
+
+async function buildYoutubeCookiesFile(tempDir, overrideCookies = '') {
+  const rawCookies = await resolveYoutubeCookiesRaw(overrideCookies);
+  if (!rawCookies) return '';
+
+  const normalized = normalizeYoutubeCookiesToNetscape(rawCookies);
+  if (!normalized) return '';
+
+  const cookiePath = join(tempDir, 'youtube-cookies.txt');
+  await writeFile(cookiePath, normalized, 'utf8');
+  return cookiePath;
 }
 
 function formatDurationStringFromSeconds(totalSeconds) {
@@ -1744,8 +1836,10 @@ async function buildHealthPayload() {
   const ffmpeg = await getFfmpegHealth(false);
   const vaultElevenLabsKey = await keyVault.resolveProviderKeyValue('elevenlabs').catch(() => '');
   const vaultOpenAiKey = await keyVault.resolveProviderKeyValue('openai').catch(() => '');
+  const vaultYoutubeCookies = await keyVault.resolveProviderKeyValue('youtube').catch(() => '');
   const hasElevenLabsKey = Boolean(ELEVENLABS_API_KEY || vaultElevenLabsKey);
   const hasOpenAiKey = Boolean(OPENAI_API_KEY || vaultOpenAiKey);
+  const hasYoutubeCookies = Boolean(String(YOUTUBE_COOKIES || '').trim() || decodeBase64Utf8(YOUTUBE_COOKIES_BASE64) || vaultYoutubeCookies);
   const keyVaultStatus = keyVault.getStatus();
   const providerUsage = await keyVault.getUsageSnapshot().catch(() => ({}));
   const youtubeHttpFallbackReady = true;
@@ -1757,6 +1851,7 @@ async function buildHealthPayload() {
     now: new Date().toISOString(),
     hasElevenLabsKey,
     hasOpenAiKey,
+    hasYoutubeCookies,
     defaultAgentId: ELEVENLABS_AGENT_ID || null,
     directTranscribeReady: hasElevenLabsKey,
     youtubeMetadataReady: youtubeBinaryOrLibReady || youtubeHttpFallbackReady,
@@ -1959,7 +2054,7 @@ async function generateImageWithGoogleNanoBanana({ prompt, apiKey, model }) {
   throw lastError || new Error('Falha ao gerar imagem com Google Nano Banana.');
 }
 
-async function fetchYoutubeMetadataWithYtDlp(youtubeUrl) {
+async function fetchYoutubeMetadataWithYtDlp(youtubeUrl, options = {}) {
   if (!isYoutubeUrl(youtubeUrl)) {
     const error = new Error('youtubeUrl inválida.');
     error.statusCode = 400;
@@ -1973,12 +2068,14 @@ async function fetchYoutubeMetadataWithYtDlp(youtubeUrl) {
     throw error;
   }
 
+  const tempDir = await mkdtemp(join(tmpdir(), 'jv-yt-meta-'));
   let output;
   try {
-    const result = await runYtDlp(
-      ['--no-playlist', '--no-warnings', '--skip-download', '--dump-single-json', youtubeUrl],
-      { timeoutMs: 120000 }
-    );
+    const cookiesPath = await buildYoutubeCookiesFile(tempDir, options.youtubeCookies || '');
+    const args = ['--no-playlist', '--no-warnings', '--skip-download', '--dump-single-json'];
+    if (cookiesPath) args.push('--cookies', cookiesPath);
+    args.push(youtubeUrl);
+    const result = await runYtDlp(args, { timeoutMs: 120000, cwd: tempDir });
     output = String(result.stdout || '').trim();
   } catch (error) {
     const stderr = String(error?.stderr || '').trim();
@@ -1986,6 +2083,8 @@ async function fetchYoutubeMetadataWithYtDlp(youtubeUrl) {
     const wrapped = new Error(detail || error.message || 'Falha ao ler metadados do YouTube.');
     wrapped.statusCode = 502;
     throw wrapped;
+  } finally {
+    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
 
   let payload;
@@ -2017,7 +2116,7 @@ async function fetchYoutubeMetadataWithYtDlp(youtubeUrl) {
   };
 }
 
-async function fetchYoutubeMetadata(youtubeUrl) {
+async function fetchYoutubeMetadata(youtubeUrl, options = {}) {
   if (!isYoutubeUrl(youtubeUrl)) {
     const error = new Error('youtubeUrl inválida.');
     error.statusCode = 400;
@@ -2029,7 +2128,7 @@ async function fetchYoutubeMetadata(youtubeUrl) {
 
   if (ytDlpHealth.available) {
     try {
-      return await fetchYoutubeMetadataWithYtDlp(youtubeUrl);
+      return await fetchYoutubeMetadataWithYtDlp(youtubeUrl, options);
     } catch (error) {
       errors.push(error?.message || String(error));
     }
@@ -2059,7 +2158,7 @@ async function fetchYoutubeMetadata(youtubeUrl) {
   }
 }
 
-async function downloadYoutubeAudioWithYtDlp(youtubeUrl) {
+async function downloadYoutubeAudioWithYtDlp(youtubeUrl, options = {}) {
   if (!isYoutubeUrl(youtubeUrl)) {
     throw new Error('youtubeUrl inválida para download automático.');
   }
@@ -2074,6 +2173,8 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl) {
   ];
 
   try {
+    const cookiesPath = await buildYoutubeCookiesFile(tempDir, options.youtubeCookies || '');
+
     for (let i = 0; i < strategies.length; i += 1) {
       const strategy = strategies[i];
       const runDir = join(tempDir, `try-${i + 1}`);
@@ -2099,6 +2200,9 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl) {
         '-o',
         outTemplate
       ];
+      if (cookiesPath) {
+        args.push('--cookies', cookiesPath);
+      }
       if (strategy.extractorArgs) {
         args.push('--extractor-args', strategy.extractorArgs);
       }
@@ -2162,7 +2266,7 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl) {
   }
 }
 
-async function downloadYoutubeAudio(youtubeUrl) {
+async function downloadYoutubeAudio(youtubeUrl, options = {}) {
   if (!isYoutubeUrl(youtubeUrl)) {
     throw new Error('youtubeUrl inválida para download automático.');
   }
@@ -2172,7 +2276,7 @@ async function downloadYoutubeAudio(youtubeUrl) {
 
   if (ytDlpHealth.available) {
     try {
-      return await downloadYoutubeAudioWithYtDlp(youtubeUrl);
+      return await downloadYoutubeAudioWithYtDlp(youtubeUrl, options);
     } catch (error) {
       errors.push(error?.message || String(error));
     }
@@ -2718,7 +2822,11 @@ async function handleTranscribe(req, res) {
   const requestedMimeType = String(body.mimeType || 'video/mp4');
   const modelId = String(body.modelId || 'scribe_v1');
   const languageCode = body.languageCode ? String(body.languageCode) : '';
+  const youtubeCookies = String(body.youtubeCookies || '').trim();
+  const youtubeCookiesBase64 = String(body.youtubeCookiesBase64 || '').trim();
+  const requestYoutubeCookies = youtubeCookies || decodeBase64Utf8(youtubeCookiesBase64);
   const allowSyntheticFallback = body.allowSyntheticFallback === true || String(body.allowSyntheticFallback || '').trim().toLowerCase() === 'true';
+  const resolvedYoutubeCookies = youtubeUrl ? await resolveYoutubeCookiesRaw(requestYoutubeCookies) : '';
 
   if (!base64Data && !youtubeUrl) {
     sendJson(res, 400, { error: 'Envie base64Data ou youtubeUrl para transcrição.' });
@@ -2733,7 +2841,7 @@ async function handleTranscribe(req, res) {
   let mimeType = requestedMimeType;
   try {
     if (youtubeUrl) {
-      const downloaded = await downloadYoutubeAudio(youtubeUrl);
+      const downloaded = await downloadYoutubeAudio(youtubeUrl, { youtubeCookies: resolvedYoutubeCookies });
       mediaBuffer = downloaded.buffer;
       fileName = downloaded.fileName;
       mimeType = downloaded.mimeType;
@@ -2766,9 +2874,14 @@ async function handleTranscribe(req, res) {
 
         const videoIdHint = buildYoutubeVideoIdHint(extractYoutubeVideoId(youtubeUrl));
         const combined = `${error?.message || 'Falha ao preparar mídia.'} | Fallback captions: ${fallbackError?.message || fallbackError}`;
+        const needsCookies = /sign in to confirm you'?re not a bot/i.test(combined);
+        const cookiesHint = needsCookies && !resolvedYoutubeCookies
+          ? 'Dica: configure YOUTUBE_COOKIES (Netscape cookies.txt ou JSON exportado) para desbloquear vídeos protegidos por bot-check.'
+          : '';
         const message = [
           'Não foi possível obter áudio/captions reais deste vídeo no ambiente atual.',
           videoIdHint,
+          cookiesHint,
           `Detalhes: ${combined}`
         ].filter(Boolean).join(' ');
         sendJson(res, fallbackError?.statusCode || error.statusCode || 422, {
@@ -2819,13 +2932,16 @@ async function handleYoutubeMetadata(req, res) {
   }
 
   const youtubeUrl = String(body.youtubeUrl || '').trim();
+  const youtubeCookies = String(body.youtubeCookies || '').trim();
+  const youtubeCookiesBase64 = String(body.youtubeCookiesBase64 || '').trim();
+  const requestYoutubeCookies = youtubeCookies || decodeBase64Utf8(youtubeCookiesBase64);
   if (!youtubeUrl) {
     sendJson(res, 400, { error: 'youtubeUrl é obrigatória.' });
     return;
   }
 
   try {
-    const metadata = await fetchYoutubeMetadata(youtubeUrl);
+    const metadata = await fetchYoutubeMetadata(youtubeUrl, { youtubeCookies: requestYoutubeCookies });
     sendJson(res, 200, metadata);
   } catch (error) {
     sendJson(res, error.statusCode || 502, { error: error.message || 'Falha ao buscar metadados do YouTube.' });
@@ -3539,6 +3655,10 @@ function startLocalServer() {
     console.log(keyVault.getStatus().ready
       ? '[server] Key Vault ready: encrypted multi-provider keys enabled'
       : '[server] Key Vault not ready: set KEY_VAULT_MASTER_KEY to enable encrypted key storage');
+    // eslint-disable-next-line no-console
+    console.log((String(YOUTUBE_COOKIES || '').trim() || decodeBase64Utf8(YOUTUBE_COOKIES_BASE64))
+      ? '[server] YouTube cookies detected in env: bot-check protected videos have better extraction odds'
+      : '[server] YouTube cookies missing: bot-check protected videos may fail extraction');
     // eslint-disable-next-line no-console
     console.log(`[server] YouTube auto-transcribe: yt-dlp=${YT_DLP_BIN} with HTTP fallback enabled`);
     getYtdlCoreHealth(false).then((status) => {
