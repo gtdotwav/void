@@ -3,7 +3,7 @@ import { createReadStream, existsSync, readFileSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { cwd, env } from 'node:process';
+import { arch, cwd, env } from 'node:process';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
@@ -49,6 +49,7 @@ const DATA_ROOT = IS_SERVERLESS_RUNTIME ? join(tmpdir(), 'jv-video-studio') : jo
 const MAX_REMOTE_SOURCE_BYTES = Number(env.MAX_REMOTE_SOURCE_BYTES || 600 * 1024 * 1024);
 const RENDER_SEGMENT_MIN_SEC = 0.04;
 const SERVERLESS_YT_DLP_PATH = env.YT_DLP_SERVERLESS_PATH || join(tmpdir(), 'yt-dlp');
+const BUNDLED_SERVERLESS_YT_DLP_PATH = env.YT_DLP_BUNDLED_PATH || join(ROOT, 'bin', 'yt-dlp_linux');
 
 const keyVault = createKeyVault({ dataRoot: DATA_ROOT, envVars: env });
 const automationEngine = createAutomationEngine({ dataRoot: DATA_ROOT });
@@ -802,23 +803,51 @@ function runCommand(command, args, options = {}) {
 
 async function ensureServerlessYtDlpBinary() {
   if (!IS_SERVERLESS_RUNTIME) return '';
+  if (existsSync(BUNDLED_SERVERLESS_YT_DLP_PATH)) {
+    try {
+      await runCommand(BUNDLED_SERVERLESS_YT_DLP_PATH, ['--version'], { timeoutMs: YT_DLP_HEALTH_TIMEOUT_MS });
+      return BUNDLED_SERVERLESS_YT_DLP_PATH;
+    } catch (_error) {
+      // fallback to /tmp bootstrap below
+    }
+  }
   if (existsSync(SERVERLESS_YT_DLP_PATH)) {
-    return SERVERLESS_YT_DLP_PATH;
+    try {
+      await runCommand(SERVERLESS_YT_DLP_PATH, ['--version'], { timeoutMs: YT_DLP_HEALTH_TIMEOUT_MS });
+      return SERVERLESS_YT_DLP_PATH;
+    } catch (_error) {
+      await rm(SERVERLESS_YT_DLP_PATH, { force: true }).catch(() => {});
+    }
   }
   if (ytDlpRuntimeBinaryPromise) return ytDlpRuntimeBinaryPromise;
 
   ytDlpRuntimeBinaryPromise = (async () => {
-    const module = await import('yt-dlp-wrap');
-    const YTDlpWrap = module?.default?.default || module?.default || module;
-    if (!YTDlpWrap || typeof YTDlpWrap.downloadFromGithub !== 'function') {
-      throw new Error('yt-dlp-wrap indisponível para download de binário.');
+    let assetName = 'yt-dlp_linux';
+    if (process.platform === 'linux' && arch === 'arm64') assetName = 'yt-dlp_linux_aarch64';
+    else if (process.platform === 'darwin') assetName = 'yt-dlp_macos';
+    else if (process.platform === 'win32') assetName = 'yt-dlp.exe';
+
+    const downloadUrl = `https://github.com/yt-dlp/yt-dlp/releases/latest/download/${assetName}`;
+    const response = await fetch(downloadUrl, {
+      method: 'GET',
+      headers: { 'User-Agent': 'voidclip-ytdl-bootstrap/1.0' },
+      redirect: 'follow'
+    });
+    if (!response.ok) {
+      throw new Error(`Falha ao baixar binário yt-dlp (${response.status}).`);
     }
 
-    await YTDlpWrap.downloadFromGithub(SERVERLESS_YT_DLP_PATH);
+    const binary = Buffer.from(await response.arrayBuffer());
+    if (!binary.length) {
+      throw new Error('Download do binário yt-dlp retornou vazio.');
+    }
+
+    await writeFile(SERVERLESS_YT_DLP_PATH, binary);
     await chmod(SERVERLESS_YT_DLP_PATH, 0o755).catch(() => {});
     if (!existsSync(SERVERLESS_YT_DLP_PATH)) {
       throw new Error('Download do binário yt-dlp falhou no runtime serverless.');
     }
+    await runCommand(SERVERLESS_YT_DLP_PATH, ['--version'], { timeoutMs: YT_DLP_HEALTH_TIMEOUT_MS });
     return SERVERLESS_YT_DLP_PATH;
   })().finally(() => {
     ytDlpRuntimeBinaryPromise = null;
