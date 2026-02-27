@@ -34,6 +34,7 @@ const OPENAI_API_KEY = env.OPENAI_API_KEY || '';
 const YOUTUBE_COOKIES = env.YOUTUBE_COOKIES || env.YT_DLP_COOKIES || '';
 const YOUTUBE_COOKIES_BASE64 = env.YOUTUBE_COOKIES_BASE64 || '';
 const YT_DLP_BIN = env.YT_DLP_PATH || 'yt-dlp';
+const YT_DLP_JS_RUNTIMES = String(env.YT_DLP_JS_RUNTIMES || 'node').trim();
 const ELEVENLABS_ENDPOINT = 'https://api.elevenlabs.io/v1/speech-to-text';
 const ELEVENLABS_SIGNED_URL_ENDPOINT = 'https://api.elevenlabs.io/v1/convai/conversation/get-signed-url';
 const OPENAI_IMAGES_ENDPOINT = 'https://api.openai.com/v1/images/generations';
@@ -232,6 +233,23 @@ function decodeBase64Utf8(value) {
   } catch (_error) {
     return '';
   }
+}
+
+function appendYtDlpJsRuntimeArgs(args) {
+  const raw = String(YT_DLP_JS_RUNTIMES || '').trim();
+  if (!raw || /^auto$/i.test(raw) || /^default$/i.test(raw)) return args;
+
+  const runtimes = raw
+    .split(/[,\s]+/)
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+  if (!runtimes.length) return args;
+
+  args.push('--no-js-runtimes');
+  runtimes.forEach((runtime) => {
+    args.push('--js-runtimes', runtime);
+  });
+  return args;
 }
 
 function cookieHeaderToNetscape(rawCookieHeader, domain = '.youtube.com') {
@@ -1269,7 +1287,7 @@ async function downloadYoutubeVideoForEditing(youtubeUrl, tempDir) {
 
   const outTemplate = join(tempDir, 'source.%(ext)s');
   try {
-    await runYtDlp([
+    const args = appendYtDlpJsRuntimeArgs([
       '--no-playlist',
       '--no-progress',
       '--no-warnings',
@@ -1283,7 +1301,8 @@ async function downloadYoutubeVideoForEditing(youtubeUrl, tempDir) {
       '-o',
       outTemplate,
       youtubeUrl
-    ], { timeoutMs: 8 * 60 * 1000, cwd: tempDir });
+    ]);
+    await runYtDlp(args, { timeoutMs: 8 * 60 * 1000, cwd: tempDir });
   } catch (error) {
     const stderr = String(error?.stderr || '').trim();
     const detail = stderr ? stderr.split('\n').slice(-2).join(' | ') : '';
@@ -2072,7 +2091,7 @@ async function fetchYoutubeMetadataWithYtDlp(youtubeUrl, options = {}) {
   let output;
   try {
     const cookiesPath = await buildYoutubeCookiesFile(tempDir, options.youtubeCookies || '');
-    const args = ['--no-playlist', '--no-warnings', '--skip-download', '--dump-single-json'];
+    const args = appendYtDlpJsRuntimeArgs(['--no-playlist', '--no-warnings', '--skip-download', '--dump-single-json']);
     if (cookiesPath) args.push('--cookies', cookiesPath);
     args.push(youtubeUrl);
     const result = await runYtDlp(args, { timeoutMs: 120000, cwd: tempDir });
@@ -2200,6 +2219,7 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl, options = {}) {
         '-o',
         outTemplate
       ];
+      appendYtDlpJsRuntimeArgs(args);
       if (cookiesPath) {
         args.push('--cookies', cookiesPath);
       }
