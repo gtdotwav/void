@@ -256,6 +256,15 @@ function appendYtDlpJsRuntimeArgs(args) {
   return args;
 }
 
+/**
+ * Remove chars outside latin-1 (>0xFF) from cookie values so yt-dlp's
+ * HTTP layer (which encodes headers as latin-1) never throws UnicodeEncodeError.
+ */
+function sanitizeCookieValue(value) {
+  // eslint-disable-next-line no-control-regex
+  return String(value || '').replace(/[^\x00-\xff]/g, '');
+}
+
 function cookieHeaderToNetscape(rawCookieHeader, domain = '.youtube.com') {
   const header = String(rawCookieHeader || '').trim();
   if (!header) return '';
@@ -265,8 +274,8 @@ function cookieHeaderToNetscape(rawCookieHeader, domain = '.youtube.com') {
   pairs.forEach((pair) => {
     const eqIndex = pair.indexOf('=');
     if (eqIndex <= 0) return;
-    const name = pair.slice(0, eqIndex).trim();
-    const value = pair.slice(eqIndex + 1).trim();
+    const name = sanitizeCookieValue(pair.slice(0, eqIndex).trim());
+    const value = sanitizeCookieValue(pair.slice(eqIndex + 1).trim());
     if (!name) return;
     lines.push(`${domain}\tTRUE\t/\tTRUE\t2147483647\t${name}\t${value}`);
   });
@@ -285,10 +294,10 @@ function cookieJsonArrayToNetscape(rawJson) {
   const lines = ['# Netscape HTTP Cookie File'];
   parsed.forEach((entry) => {
     if (!entry || typeof entry !== 'object') return;
-    const domain = String(entry.domain || '.youtube.com').trim() || '.youtube.com';
-    const path = String(entry.path || '/').trim() || '/';
-    const name = String(entry.name || '').trim();
-    const value = String(entry.value || '').trim();
+    const domain = sanitizeCookieValue(String(entry.domain || '.youtube.com').trim() || '.youtube.com');
+    const path = sanitizeCookieValue(String(entry.path || '/').trim() || '/');
+    const name = sanitizeCookieValue(String(entry.name || '').trim());
+    const value = sanitizeCookieValue(String(entry.value || '').trim());
     const secure = entry.secure ? 'TRUE' : 'FALSE';
     const expires = Number(entry.expirationDate || entry.expires || 2147483647);
     if (!name) return;
@@ -298,16 +307,37 @@ function cookieJsonArrayToNetscape(rawJson) {
   return lines.length > 1 ? `${lines.join('\n')}\n` : '';
 }
 
+/**
+ * Sanitiza um arquivo Netscape já montado: percorre cada linha e limpa
+ * os campos de nome/valor para remover chars fora do range latin-1.
+ */
+function sanitizeNetscapeFile(netscapeContent) {
+  return netscapeContent
+    .split('\n')
+    .map((line) => {
+      if (!line || line.startsWith('#')) return line;
+      const parts = line.split('\t');
+      // Netscape format: domain  includeSubdomains  path  secure  expires  name  value
+      if (parts.length < 6) return sanitizeCookieValue(line);
+      // Sanitize name (index 5) and value (index 6)
+      parts[5] = sanitizeCookieValue(parts[5] || '');
+      if (parts.length > 6) parts[6] = sanitizeCookieValue(parts[6] || '');
+      return parts.join('\t');
+    })
+    .join('\n');
+}
+
 function normalizeYoutubeCookiesToNetscape(rawCookies) {
   const source = String(rawCookies || '').trim();
   if (!source) return '';
   if (source.includes('\t') && source.includes('\n')) {
-    return source.startsWith('# Netscape HTTP Cookie File') ? source : `# Netscape HTTP Cookie File\n${source}`;
+    const base = source.startsWith('# Netscape HTTP Cookie File') ? source : `# Netscape HTTP Cookie File\n${source}`;
+    return sanitizeNetscapeFile(base);
   }
 
   const jsonConverted = cookieJsonArrayToNetscape(source);
-  if (jsonConverted) return jsonConverted;
-  return cookieHeaderToNetscape(source);
+  if (jsonConverted) return sanitizeNetscapeFile(jsonConverted);
+  return sanitizeNetscapeFile(cookieHeaderToNetscape(source));
 }
 
 async function resolveYoutubeCookiesRaw(overrideCookies = '') {
@@ -1012,7 +1042,7 @@ async function ensureServerlessYtDlpBinary() {
       await runCommand(SERVERLESS_YT_DLP_PATH, ['--version'], { timeoutMs: YT_DLP_HEALTH_TIMEOUT_MS });
       return SERVERLESS_YT_DLP_PATH;
     } catch (_error) {
-      await rm(SERVERLESS_YT_DLP_PATH, { force: true }).catch(() => {});
+      await rm(SERVERLESS_YT_DLP_PATH, { force: true }).catch(() => { });
     }
   }
   if (ytDlpRuntimeBinaryPromise) return ytDlpRuntimeBinaryPromise;
@@ -1039,7 +1069,7 @@ async function ensureServerlessYtDlpBinary() {
     }
 
     await writeFile(SERVERLESS_YT_DLP_PATH, binary);
-    await chmod(SERVERLESS_YT_DLP_PATH, 0o755).catch(() => {});
+    await chmod(SERVERLESS_YT_DLP_PATH, 0o755).catch(() => { });
     if (!existsSync(SERVERLESS_YT_DLP_PATH)) {
       throw new Error('Download do binário yt-dlp falhou no runtime serverless.');
     }
@@ -1710,7 +1740,7 @@ async function executeFramePatchRuntime(payload) {
       } : null
     };
   } finally {
-    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    await rm(tempDir, { recursive: true, force: true }).catch(() => { });
   }
 }
 
@@ -1933,7 +1963,7 @@ async function executeIncrementalRenderRuntime(payload) {
       }
     };
   } finally {
-    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    await rm(tempDir, { recursive: true, force: true }).catch(() => { });
   }
 }
 
@@ -2228,7 +2258,7 @@ async function fetchYoutubeMetadataWithYtDlp(youtubeUrl, options = {}) {
     wrapped.statusCode = 502;
     throw wrapped;
   } finally {
-    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    await rm(tempDir, { recursive: true, force: true }).catch(() => { });
   }
 
   let payload;
@@ -2407,7 +2437,7 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl, options = {}) {
   } catch (error) {
     throw new Error(error?.message || 'Falha ao baixar áudio do YouTube via yt-dlp.');
   } finally {
-    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    await rm(tempDir, { recursive: true, force: true }).catch(() => { });
   }
 }
 
@@ -2523,7 +2553,7 @@ async function downloadYoutubeVideoWithYtDlp(youtubeUrl, options = {}) {
   } catch (error) {
     throw new Error(error?.message || 'Falha ao baixar vídeo do YouTube para ingestão.');
   } finally {
-    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    await rm(tempDir, { recursive: true, force: true }).catch(() => { });
   }
 }
 
@@ -3182,7 +3212,7 @@ async function handleTranscribe(req, res) {
     });
     // eslint-disable-next-line no-console
     console.log('[transcribe] request success');
-    await keyVault.recordProviderUsage('elevenlabs', { costUsd: Number(env.ELEVENLABS_ESTIMATED_COST_PER_TRANSCRIBE || 0) }).catch(() => {});
+    await keyVault.recordProviderUsage('elevenlabs', { costUsd: Number(env.ELEVENLABS_ESTIMATED_COST_PER_TRANSCRIBE || 0) }).catch(() => { });
     sendJson(res, 200, payload);
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -3414,7 +3444,7 @@ async function handleComplementImage(req, res) {
 
   try {
     const result = await generateImageWithOpenAI({ prompt, apiKey, model, size });
-    await keyVault.recordProviderUsage('openai', { costUsd: Number(env.OPENAI_ESTIMATED_COST_PER_IMAGE || 0) }).catch(() => {});
+    await keyVault.recordProviderUsage('openai', { costUsd: Number(env.OPENAI_ESTIMATED_COST_PER_IMAGE || 0) }).catch(() => { });
     sendJson(res, 200, {
       ok: true,
       prompt,
@@ -4037,7 +4067,7 @@ function startLocalServer() {
     getYtdlCoreHealth(false).then((status) => {
       // eslint-disable-next-line no-console
       console.log(`[server] ytdl-core: ${status.available ? 'available' : 'unavailable'} (${status.detail})`);
-    }).catch(() => {});
+    }).catch(() => { });
     // eslint-disable-next-line no-console
     console.log(`[server] Video runtime: ffmpeg=${FFMPEG_BIN} ffprobe=${FFPROBE_BIN}`);
   });
