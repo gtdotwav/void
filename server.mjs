@@ -317,16 +317,27 @@ function cookieJsonArrayToNetscape(rawJson) {
  * os campos de nome/valor para remover chars fora do range latin-1.
  */
 function sanitizeNetscapeFile(netscapeContent) {
-  return netscapeContent
+  // Normalize CRLF → LF so we split cleanly on \n
+  const normalized = String(netscapeContent || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  return normalized
     .split('\n')
     .map((line) => {
-      if (!line || line.startsWith('#')) return line;
-      const parts = line.split('\t');
-      // Netscape format: domain  includeSubdomains  path  secure  expires  name  value
-      if (parts.length < 6) return sanitizeCookieValue(line);
-      // Sanitize name (index 5) and value (index 6)
+      const trimmed = line.replace(/\r$/, '');
+      if (!trimmed || trimmed.startsWith('#')) return trimmed;
+      const parts = trimmed.split('\t');
+      // Netscape format has 7 tab-delimited fields:
+      // domain  includeSubdomains  path  secure  expires  name  value
+      if (parts.length < 6) {
+        return sanitizeCookieValue(trimmed);
+      }
+      // Sanitize name (index 5) and value (index 6+)
       parts[5] = sanitizeCookieValue(parts[5] || '');
-      if (parts.length > 6) parts[6] = sanitizeCookieValue(parts[6] || '');
+      if (parts.length > 6) {
+        // Collapse any extra parts back into the value, then sanitize
+        const raw6 = parts.slice(6).join('\t');
+        parts[6] = sanitizeCookieValue(raw6);
+        return parts.slice(0, 6).join('\t') + '\t' + parts[6];
+      }
       return parts.join('\t');
     })
     .join('\n');
