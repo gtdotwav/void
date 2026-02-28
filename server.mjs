@@ -257,12 +257,17 @@ function appendYtDlpJsRuntimeArgs(args) {
 }
 
 /**
- * Remove chars outside latin-1 (>0xFF) from cookie values so yt-dlp's
- * HTTP layer (which encodes headers as latin-1) never throws UnicodeEncodeError.
+ * Sanitize cookie names/values so they are safe for yt-dlp's Netscape cookie
+ * file format and HTTP headers:
+ *  - Remove chars outside latin-1 (>0xFF) to avoid UnicodeEncodeError.
+ *  - Remove ASCII control chars (0x00-0x1F, 0x7F) that corrupt tab-delimited
+ *    Netscape lines — especially \x05 (ENQ) found in some SAPISID cookie values
+ *    which causes yt-dlp to emit "skipping cookie file entry due to invalid length".
+ *  - Keep printable ASCII (0x20-0x7E) and 8-bit chars (0x80-0xFF).
  */
 function sanitizeCookieValue(value) {
   // eslint-disable-next-line no-control-regex
-  return String(value || '').replace(/[^\x00-\xff]/g, '');
+  return String(value || '').replace(/[\x00-\x1f\x7f]|[^\x00-\xff]/g, '');
 }
 
 function cookieHeaderToNetscape(rawCookieHeader, domain = '.youtube.com') {
