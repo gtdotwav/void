@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { arch, cwd, env } from 'node:process';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createAutomationEngine } from './lib/automation-engine.mjs';
 import { createKeyVault } from './lib/key-vault.mjs';
 
@@ -50,6 +50,8 @@ const FFPROBE_BIN = env.FFPROBE_PATH || 'ffprobe';
 const FFMPEG_HEALTH_TIMEOUT_MS = Number(env.FFMPEG_HEALTH_TIMEOUT_MS || 3500);
 const DATA_ROOT = IS_SERVERLESS_RUNTIME ? join(tmpdir(), 'jv-video-studio') : join(ROOT, 'data');
 const MAX_REMOTE_SOURCE_BYTES = Number(env.MAX_REMOTE_SOURCE_BYTES || 600 * 1024 * 1024);
+const MAX_INGEST_MEDIA_BYTES = Number(env.MAX_INGEST_MEDIA_BYTES || 180 * 1024 * 1024);
+const MAX_INGEST_DURATION_SECONDS = Number(env.MAX_INGEST_DURATION_SECONDS || 20 * 60);
 const RENDER_SEGMENT_MIN_SEC = 0.04;
 const SERVERLESS_YT_DLP_PATH = env.YT_DLP_SERVERLESS_PATH || join(tmpdir(), 'yt-dlp');
 const BUNDLED_SERVERLESS_YT_DLP_PATH = env.YT_DLP_BUNDLED_PATH || join(ROOT, 'bin', 'yt-dlp_linux');
@@ -1272,6 +1274,45 @@ async function downloadHttpMediaToFile(sourceUrl, targetPath) {
   return targetPath;
 }
 
+async function downloadHttpMediaToBuffer(sourceUrl, maxBytes = MAX_TRANSCRIBE_MEDIA_BYTES) {
+  const response = await fetch(sourceUrl);
+  if (!response.ok) {
+    const error = new Error(`Falha ao baixar mídia remota (HTTP ${response.status}).`);
+    error.statusCode = 502;
+    throw error;
+  }
+
+  const contentLength = Number(response.headers.get('content-length') || 0);
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    const error = new Error(
+      `Arquivo remoto excede limite de ${Math.round(maxBytes / 1024 / 1024)}MB.`
+    );
+    error.statusCode = 413;
+    throw error;
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (!buffer.length) {
+    const error = new Error('Arquivo remoto vazio.');
+    error.statusCode = 422;
+    throw error;
+  }
+  if (buffer.length > maxBytes) {
+    const error = new Error(
+      `Arquivo remoto excede limite de ${Math.round(maxBytes / 1024 / 1024)}MB após download.`
+    );
+    error.statusCode = 413;
+    throw error;
+  }
+
+  const fileNameFromUrl = String(new URL(sourceUrl).pathname.split('/').filter(Boolean).pop() || `media-${Date.now()}.mp4`).trim();
+  return {
+    buffer,
+    fileName: fileNameFromUrl,
+    mimeType: String(response.headers.get('content-type') || inferMimeTypeFromName(fileNameFromUrl, 'video/mp4')).split(';')[0].trim() || 'video/mp4'
+  };
+}
+
 async function downloadYoutubeVideoForEditing(youtubeUrl, tempDir) {
   if (IS_SERVERLESS_RUNTIME) {
     const error = new Error('Edição com YouTube direto indisponível em serverless. Faça upload de arquivo.');
@@ -2286,6 +2327,116 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl, options = {}) {
   }
 }
 
+async function downloadYoutubeVideoWithYtDlp(youtubeUrl, options = {}) {
+  if (!isYoutubeUrl(youtubeUrl)) {
+    throw new Error('youtubeUrl inválida para ingestão.');
+  }
+
+  const tempDir = await mkdtemp(join(tmpdir(), 'jv-yt-video-'));
+  const attemptErrors = [];
+  const strategies = [
+    { label: 'default', extractorArgs: '' },
+    { label: 'android+ios', extractorArgs: 'youtube:player_client=android,ios' },
+    { label: 'tv+ios', extractorArgs: 'youtube:player_client=tv,ios' },
+    { label: 'web_embedded+android', extractorArgs: 'youtube:player_client=web_embedded,android' }
+  ];
+
+  try {
+    const cookiesPath = await buildYoutubeCookiesFile(tempDir, options.youtubeCookies || '');
+
+    for (let i = 0; i < strategies.length; i += 1) {
+      const strategy = strategies[i];
+      const runDir = join(tempDir, `try-${i + 1}`);
+      await mkdir(runDir, { recursive: true });
+      const outTemplate = join(runDir, 'video.%(ext)s');
+
+      const args = [
+        '--no-playlist',
+        '--no-progress',
+        '--no-warnings',
+        '--socket-timeout',
+        '20',
+        '--extractor-retries',
+        '2',
+        '--fragment-retries',
+        '2',
+        '--retries',
+        '2',
+        '--newline',
+        '--force-ipv4',
+        '-f',
+        'best[ext=mp4][vcodec!=none][acodec!=none][height<=1080]/best[vcodec!=none][acodec!=none][height<=1080]/best[ext=mp4][vcodec!=none][acodec!=none]/best[vcodec!=none][acodec!=none]/best',
+        '-o',
+        outTemplate
+      ];
+      appendYtDlpJsRuntimeArgs(args);
+      if (cookiesPath) {
+        args.push('--cookies', cookiesPath);
+      }
+      if (strategy.extractorArgs) {
+        args.push('--extractor-args', strategy.extractorArgs);
+      }
+      args.push(youtubeUrl);
+
+      try {
+        await runYtDlp(args, { timeoutMs: 300000, cwd: runDir });
+
+        const files = (await readdir(runDir))
+          .filter((name) => !name.endsWith('.part') && !name.endsWith('.ytdl'))
+          .map((name) => ({ name, abs: join(runDir, name) }));
+
+        if (!files.length) {
+          throw new Error('yt-dlp não gerou arquivo de vídeo.');
+        }
+
+        let chosen = files[0];
+        let chosenStat = await stat(chosen.abs);
+        for (const file of files.slice(1)) {
+          const fileStat = await stat(file.abs);
+          if (fileStat.size > chosenStat.size) {
+            chosen = file;
+            chosenStat = fileStat;
+          }
+        }
+
+        if (chosenStat.size > MAX_INGEST_MEDIA_BYTES) {
+          throw new Error(
+            `Vídeo muito grande para ingestão (${Math.round(chosenStat.size / 1024 / 1024)}MB). ` +
+            `Limite atual: ${Math.round(MAX_INGEST_MEDIA_BYTES / 1024 / 1024)}MB.`
+          );
+        }
+
+        const buffer = await readFile(chosen.abs);
+        if (!buffer.length) {
+          throw new Error('Arquivo de vídeo baixado está vazio.');
+        }
+
+        return {
+          buffer,
+          fileName: chosen.name,
+          mimeType: inferMimeTypeFromName(chosen.name, 'video/mp4'),
+          sizeBytes: chosenStat.size
+        };
+      } catch (error) {
+        if (error && error.code === 'ENOENT') {
+          throw new Error('yt-dlp não encontrado. Instale o binário (`brew install yt-dlp`) ou `python3 -m pip install -U yt-dlp`.');
+        }
+        const stderr = String(error?.stderr || '').trim();
+        const summary = stderr ? stderr.split('\n').slice(-2).join(' | ') : '';
+        attemptErrors.push(`${strategy.label}: ${summary || error?.message || error}`);
+      }
+    }
+
+    throw new Error(
+      `Falha ao baixar vídeo via yt-dlp.${attemptErrors.length ? ` Detalhes: ${attemptErrors.join(' | ')}` : ''}`.trim()
+    );
+  } catch (error) {
+    throw new Error(error?.message || 'Falha ao baixar vídeo do YouTube para ingestão.');
+  } finally {
+    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
 async function downloadYoutubeAudio(youtubeUrl, options = {}) {
   if (!isYoutubeUrl(youtubeUrl)) {
     throw new Error('youtubeUrl inválida para download automático.');
@@ -2838,6 +2989,7 @@ async function handleTranscribe(req, res) {
 
   const base64Data = String(body.base64Data || '');
   const youtubeUrl = String(body.youtubeUrl || '').trim();
+  const sourceUrl = String(body.sourceUrl || '').trim();
   const requestedFileName = String(body.fileName || `media-${Date.now()}.mp4`);
   const requestedMimeType = String(body.mimeType || 'video/mp4');
   const modelId = String(body.modelId || 'scribe_v1');
@@ -2848,13 +3000,13 @@ async function handleTranscribe(req, res) {
   const allowSyntheticFallback = body.allowSyntheticFallback === true || String(body.allowSyntheticFallback || '').trim().toLowerCase() === 'true';
   const resolvedYoutubeCookies = youtubeUrl ? await resolveYoutubeCookiesRaw(requestYoutubeCookies) : '';
 
-  if (!base64Data && !youtubeUrl) {
-    sendJson(res, 400, { error: 'Envie base64Data ou youtubeUrl para transcrição.' });
+  if (!base64Data && !youtubeUrl && !sourceUrl) {
+    sendJson(res, 400, { error: 'Envie base64Data, sourceUrl ou youtubeUrl para transcrição.' });
     return;
   }
 
   // eslint-disable-next-line no-console
-  console.log(`[transcribe] request start source=${youtubeUrl ? 'youtube' : 'upload'} model=${modelId}`);
+  console.log(`[transcribe] request start source=${youtubeUrl ? 'youtube' : (sourceUrl ? 'remote_url' : 'upload')} model=${modelId}`);
 
   let mediaBuffer;
   let fileName = requestedFileName;
@@ -2865,6 +3017,16 @@ async function handleTranscribe(req, res) {
       mediaBuffer = downloaded.buffer;
       fileName = downloaded.fileName;
       mimeType = downloaded.mimeType;
+    } else if (sourceUrl) {
+      if (!/^https?:\/\//i.test(sourceUrl)) {
+        const error = new Error('sourceUrl inválida. Use URL http/https.');
+        error.statusCode = 400;
+        throw error;
+      }
+      const downloaded = await downloadHttpMediaToBuffer(sourceUrl, MAX_TRANSCRIBE_MEDIA_BYTES);
+      mediaBuffer = downloaded.buffer;
+      fileName = downloaded.fileName || requestedFileName;
+      mimeType = downloaded.mimeType || requestedMimeType;
     } else {
       mediaBuffer = Buffer.from(base64Data, 'base64');
       if (!mediaBuffer.length) throw new Error('Arquivo base64 inválido ou vazio.');
@@ -2966,6 +3128,90 @@ async function handleYoutubeMetadata(req, res) {
   } catch (error) {
     sendJson(res, error.statusCode || 502, { error: error.message || 'Falha ao buscar metadados do YouTube.' });
   }
+}
+
+async function handleYoutubeIngest(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 512 * 1024);
+  } catch (error) {
+    sendJson(res, error.statusCode || 400, { error: error.message || 'Invalid body.' });
+    return;
+  }
+
+  const youtubeUrl = String(body.youtubeUrl || '').trim();
+  const youtubeCookies = String(body.youtubeCookies || '').trim();
+  const youtubeCookiesBase64 = String(body.youtubeCookiesBase64 || '').trim();
+  const requestYoutubeCookies = youtubeCookies || decodeBase64Utf8(youtubeCookiesBase64);
+  if (!youtubeUrl) {
+    sendJson(res, 400, { error: 'youtubeUrl é obrigatória.' });
+    return;
+  }
+  if (!isYoutubeUrl(youtubeUrl)) {
+    sendJson(res, 400, { error: 'youtubeUrl inválida para ingestão.' });
+    return;
+  }
+
+  const resolvedYoutubeCookies = await resolveYoutubeCookiesRaw(requestYoutubeCookies);
+  let metadata = null;
+  try {
+    metadata = await fetchYoutubeMetadata(youtubeUrl, { youtubeCookies: resolvedYoutubeCookies });
+  } catch (_error) {
+    metadata = null;
+  }
+  if (Number.isFinite(Number(metadata?.duration || 0)) && Number(metadata.duration) > MAX_INGEST_DURATION_SECONDS) {
+    sendJson(res, 413, {
+      error: `Vídeo muito longo para ingestão automática (${Math.round(Number(metadata.duration))}s). Limite atual: ${Math.round(MAX_INGEST_DURATION_SECONDS)}s.`,
+      duration: Number(metadata.duration),
+      maxDuration: MAX_INGEST_DURATION_SECONDS
+    });
+    return;
+  }
+
+  let downloaded;
+  try {
+    downloaded = await downloadYoutubeVideoWithYtDlp(youtubeUrl, { youtubeCookies: resolvedYoutubeCookies });
+  } catch (error) {
+    const details = String(error?.message || 'Falha ao baixar vídeo do YouTube.');
+    const videoIdHint = buildYoutubeVideoIdHint(extractYoutubeVideoId(youtubeUrl));
+    const needsCookies = /sign in to confirm you'?re not a bot/i.test(details);
+    const cookiesHint = needsCookies && !resolvedYoutubeCookies
+      ? 'Dica: configure YouTube cookies (Netscape cookies.txt ou JSON exportado) para vídeos com bot-check.'
+      : '';
+    const message = [
+      'Não foi possível ingerir este vídeo do YouTube no ambiente atual.',
+      videoIdHint,
+      cookiesHint,
+      `Detalhes: ${details}`
+    ].filter(Boolean).join(' ');
+    sendJson(res, error?.statusCode || 422, { error: message });
+    return;
+  }
+
+  const videoId = String(metadata?.videoId || extractYoutubeVideoId(youtubeUrl) || '').trim();
+  const title = String(metadata?.title || '').trim();
+  const label = title || (videoId ? `YouTube ${videoId}` : 'YouTube ingested video');
+  const duration = Number(metadata?.duration || 0);
+  const safeHeader = (value) => encodeURIComponent(String(value || '').slice(0, 220));
+  const fallbackFile = `youtube-${videoId || createHash('sha1').update(youtubeUrl).digest('hex').slice(0, 10)}.mp4`;
+  const fileName = sanitizePathSegment(downloaded.fileName || fallbackFile, fallbackFile);
+
+  setCorsHeaders(res);
+  res.statusCode = 200;
+  res.setHeader('Content-Type', downloaded.mimeType || 'video/mp4');
+  res.setHeader('Content-Length', String(Number(downloaded.sizeBytes || downloaded.buffer?.length || 0)));
+  res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader(
+    'Access-Control-Expose-Headers',
+    'Content-Type, Content-Length, Content-Disposition, X-Source-Duration, X-Source-Title, X-Source-Label, X-Source-Video-Id, X-Source-Bytes'
+  );
+  res.setHeader('X-Source-Video-Id', safeHeader(videoId));
+  res.setHeader('X-Source-Title', safeHeader(title));
+  res.setHeader('X-Source-Label', safeHeader(label));
+  res.setHeader('X-Source-Duration', Number.isFinite(duration) && duration > 0 ? String(duration) : '');
+  res.setHeader('X-Source-Bytes', String(downloaded.sizeBytes || downloaded.buffer?.length || 0));
+  res.end(downloaded.buffer);
 }
 
 async function handleAgentSignedUrl(req, res, requestUrl) {
@@ -3506,6 +3752,15 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (pathname === '/api/youtube/ingest') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method Not Allowed' });
+      return;
+    }
+    await handleYoutubeIngest(req, res);
+    return;
+  }
+
   if (pathname === '/api/transcribe') {
     if (req.method !== 'POST') {
       sendJson(res, 405, { error: 'Method Not Allowed' });
@@ -3702,6 +3957,7 @@ export {
   handleHealth,
   handleTranscribe,
   handleYoutubeMetadata,
+  handleYoutubeIngest,
   handleAgentSignedUrl,
   handleComplementImage,
   handleProviderKeysList,

@@ -8,6 +8,10 @@
       "maxDuration": 120,
       "includeFiles": "bin/yt-dlp_linux"
     },
+    "api/youtube/ingest.mjs": {
+      "maxDuration": 300,
+      "includeFiles": "bin/yt-dlp_linux"
+    },
     "api/health.mjs": {
       "includeFiles": "bin/yt-dlp_linux"
     }

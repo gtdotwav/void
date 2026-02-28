@@ -1671,6 +1671,7 @@
                 youtubePlaybackBlocked: false,
                 youtubePlaybackBlockReason: '',
                 youtubeCookies: '',
+                ingestedMediaBlob: null,
                 captionsSource: 'template',
                 exportCount: 0,
                 packCount: 0,
@@ -2093,6 +2094,10 @@
                 return `${resolveBackendApiBase()}/api/youtube/metadata`;
             }
 
+            function resolveYoutubeIngestApiUrl() {
+                return `${resolveBackendApiBase()}/api/youtube/ingest`;
+            }
+
             function resolveTranscribeApiUrl() {
                 return `${resolveBackendApiBase()}/api/transcribe`;
             }
@@ -2253,7 +2258,7 @@
                 if (stage === 4) {
                     const blockedReason = getTranscribeBlockingReason();
                     if (blockedReason) return `Próximo passo: transcrição bloqueada. ${blockedReason}`;
-                    if (appState.sourceKind === 'youtube' || appState.sourceKind === 'link') {
+                    if (appState.sourceKind === 'youtube' || appState.sourceKind === 'link' || appState.sourceKind === 'ingested') {
                         return 'Próximo passo: transcrição automática já roda ao enviar link; use Reajustar para recalibrar legendas e cortes.';
                     }
                     return 'Próximo passo: clique em Reajustar para gerar legendas temporizadas com ElevenLabs.';
@@ -2622,6 +2627,10 @@
                     return fileInput.files[0];
                 }
 
+                if (appState.sourceKind === 'ingested' && appState.ingestedMediaBlob instanceof Blob) {
+                    return appState.ingestedMediaBlob;
+                }
+
                 if (appState.sourceKind === 'link') {
                     let response;
                     try {
@@ -2880,6 +2889,7 @@
                     URL.revokeObjectURL(appState.objectUrl);
                     appState.objectUrl = null;
                 }
+                appState.ingestedMediaBlob = null;
             }
 
             function clamp(value, min, max) {
@@ -4679,6 +4689,74 @@
                 };
             }
 
+            function decodeHeaderValue(value) {
+                const raw = String(value || '').trim();
+                if (!raw) return '';
+                try {
+                    return decodeURIComponent(raw);
+                } catch (_error) {
+                    return raw;
+                }
+            }
+
+            async function ingestYoutubeSource(youtubeUrl, fallbackLabel = '', fallbackVideoId = '') {
+                const youtubeCookies = getResolvedYoutubeCookies();
+                const youtubeCookiesBase64 = encodeBase64Utf8(youtubeCookies);
+
+                let response;
+                try {
+                    response = await fetchWithTimeout(resolveYoutubeIngestApiUrl(), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            youtubeUrl,
+                            ...(youtubeCookiesBase64 ? { youtubeCookiesBase64 } : {})
+                        })
+                    }, 360000);
+                } catch (_error) {
+                    throw new Error('Backend indisponível para ingestão de vídeo do YouTube.');
+                }
+
+                if (!response.ok) {
+                    const maybeJson = await response.json().catch(() => null);
+                    const errorMessage = maybeJson && typeof maybeJson.error === 'string'
+                        ? maybeJson.error
+                        : `Falha ao ingerir YouTube (HTTP ${response.status}).`;
+                    throw new Error(errorMessage);
+                }
+
+                const mediaBlob = await response.blob();
+                if (!mediaBlob || !mediaBlob.size) {
+                    throw new Error('Ingestão retornou mídia vazia.');
+                }
+
+                const sourceObjectUrl = URL.createObjectURL(mediaBlob);
+                appState.objectUrl = sourceObjectUrl;
+
+                const videoId = decodeHeaderValue(response.headers.get('x-source-video-id')) || fallbackVideoId || '';
+                const title = decodeHeaderValue(response.headers.get('x-source-title')) || '';
+                const labelFromHeader = decodeHeaderValue(response.headers.get('x-source-label')) || '';
+                const durationHeaderRaw = response.headers.get('x-source-duration');
+                const durationHeader = Number(durationHeaderRaw);
+                const duration = Number.isFinite(durationHeader) && durationHeader > 0
+                    ? durationHeader
+                    : await probeDuration(sourceObjectUrl);
+
+                const label = labelFromHeader
+                    || (title ? `Ingested • ${title}` : fallbackLabel || (videoId ? `youtube.com/watch?v=${videoId}` : 'YouTube ingest'));
+
+                return {
+                    src: sourceObjectUrl,
+                    label,
+                    sourceKind: 'ingested',
+                    duration,
+                    youtubeVideoId: videoId,
+                    youtubePlaybackBlocked: false,
+                    youtubePlaybackBlockReason: '',
+                    ingestedMediaBlob: mediaBlob
+                };
+            }
+
             function probeDuration(src) {
                 return new Promise((resolve, reject) => {
                     const timeout = setTimeout(() => {
@@ -4720,12 +4798,14 @@
                 let youtubeVideoId = '';
                 let youtubePlaybackBlocked = false;
                 let youtubePlaybackBlockReason = '';
+                let ingestedMediaBlob = null;
                 let duration;
                 if (file) {
                     src = URL.createObjectURL(file);
                     appState.objectUrl = src;
                     label = file.name;
                     sourceKind = 'upload';
+                    appState.ingestedMediaBlob = null;
                     duration = await probeDuration(src);
                 } else {
                     const parsedSource = parseSourceFromUrl(urlValue);
@@ -4734,28 +4814,17 @@
                     sourceKind = parsedSource.sourceKind;
                     youtubeVideoId = parsedSource.youtubeVideoId;
                     if (sourceKind === 'youtube') {
-                        if (window.location.protocol === 'file:') {
-                            throw new Error('Para links do YouTube, abra a interface via http://localhost (não file://). Ex.: `python3 -m http.server 8080` para o front e `node server.mjs` na porta 8787 para transcrição.');
-                        }
-                        try {
-                            duration = await probeYoutubeDuration(youtubeVideoId);
-                        } catch (youtubePreviewError) {
-                            try {
-                                const metadata = await probeYoutubeDurationFromBackend(src);
-                                duration = metadata.duration;
-                                youtubePlaybackBlocked = true;
-                                youtubePlaybackBlockReason = youtubePreviewError.message || 'Preview do YouTube indisponível.';
-                                if (metadata.videoId && metadata.videoId !== youtubeVideoId) {
-                                    youtubeVideoId = metadata.videoId;
-                                }
-                                if (metadata.title) {
-                                    label = `${label} — ${metadata.title}`;
-                                }
-                            } catch (metadataError) {
-                                throw new Error(`${youtubePreviewError.message || 'Falha no preview do YouTube.'} Fallback de metadados também falhou: ${metadataError.message}`);
-                            }
-                        }
+                        const ingested = await ingestYoutubeSource(src, label, youtubeVideoId);
+                        src = ingested.src;
+                        label = ingested.label;
+                        sourceKind = ingested.sourceKind;
+                        duration = ingested.duration;
+                        youtubeVideoId = ingested.youtubeVideoId || youtubeVideoId;
+                        youtubePlaybackBlocked = Boolean(ingested.youtubePlaybackBlocked);
+                        youtubePlaybackBlockReason = String(ingested.youtubePlaybackBlockReason || '');
+                        ingestedMediaBlob = ingested.ingestedMediaBlob || null;
                     } else {
+                        ingestedMediaBlob = null;
                         duration = await probeDuration(src);
                     }
                 }
@@ -4767,7 +4836,8 @@
                     duration,
                     youtubeVideoId,
                     youtubePlaybackBlocked,
-                    youtubePlaybackBlockReason
+                    youtubePlaybackBlockReason,
+                    ingestedMediaBlob
                 };
             }
 
@@ -5625,7 +5695,7 @@
                 if (stage === 4) {
                     const blocked = getTranscribeBlockingReason();
                     if (blocked) return `Passo 4/5 bloqueado: ${blocked}`;
-                    if (appState.sourceKind === 'youtube' || appState.sourceKind === 'link') {
+                    if (appState.sourceKind === 'youtube' || appState.sourceKind === 'link' || appState.sourceKind === 'ingested') {
                         return 'Passo 4/5: transcrição automática ativa para link. Execute "transcrever" só para reajustes.';
                     }
                     return 'Passo 4/5: execute "transcrever" para aplicar legendas temporizadas em todos os clips.';
@@ -5998,6 +6068,7 @@
                 appState.youtubeVideoId = '';
                 appState.youtubePlaybackBlocked = false;
                 appState.youtubePlaybackBlockReason = '';
+                appState.ingestedMediaBlob = null;
                 appState.duration = 0;
                 appState.captionsSource = 'template';
                 appState.transcriptWords = [];
@@ -6068,6 +6139,7 @@
                     appState.youtubeVideoId = source.youtubeVideoId || '';
                     appState.youtubePlaybackBlocked = Boolean(source.youtubePlaybackBlocked);
                     appState.youtubePlaybackBlockReason = String(source.youtubePlaybackBlockReason || '');
+                    appState.ingestedMediaBlob = source.ingestedMediaBlob || null;
                     appState.duration = source.duration;
                     appState.clips = buildClips(source.duration).map((clip) => ensureClipEditData(clip));
                     appState.captionsSource = 'template';
@@ -6109,7 +6181,7 @@
                         setGenerateStatus(`Generated ${appState.clips.length} clips from this video.`, 'success');
                     }
                     switchEditorTab('captions');
-                    const shouldAutoTranscribe = !file && (appState.sourceKind === 'youtube' || appState.sourceKind === 'link');
+                    const shouldAutoTranscribe = !file && (appState.sourceKind === 'youtube' || appState.sourceKind === 'link' || appState.sourceKind === 'ingested');
                     if (shouldAutoTranscribe) {
                         setTranscribeStatus('Link detectado. Iniciando transcrição automática...', 'muted');
                         setTimeout(() => {
