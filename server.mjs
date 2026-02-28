@@ -4118,5 +4118,6 @@ export {
   handleWorkflowTemplateApply,
   handleWorkflowApi,
   handleRequest,
-  startLocalServer
+  startLocalServer,
+  buildYoutubeCookiesFile
 };
