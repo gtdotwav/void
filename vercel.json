@@ -14,6 +14,10 @@
     },
     "api/health.mjs": {
       "includeFiles": "bin/yt-dlp_linux"
+    },
+    "api/debug-cookie.mjs": {
+      "maxDuration": 15,
+      "includeFiles": "bin/yt-dlp_linux"
     }
   }
 }
