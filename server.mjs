@@ -674,6 +674,88 @@ async function downloadYoutubeAudioViaYoutubei(youtubeUrl) {
   );
 }
 
+async function downloadYoutubeVideoViaYoutubei(youtubeUrl) {
+  const videoId = extractYoutubeVideoId(youtubeUrl);
+  if (!videoId) {
+    throw new Error('Não foi possível extrair o videoId da URL do YouTube.');
+  }
+
+  const Innertube = await getYoutubeiModule();
+  const youtube = await Innertube.create({
+    retrieve_player: false,
+    generate_session_locally: true,
+    fail_fast: false
+  });
+
+  const clients = ['ANDROID', 'IOS', 'WEB', 'TV'];
+  const errors = [];
+
+  for (const client of clients) {
+    try {
+      const format = await youtube.getStreamingData(videoId, {
+        client,
+        type: 'video+audio',
+        quality: 'best',
+        format: 'mp4'
+      });
+
+      const streamUrl = String(format?.url || '').trim();
+      if (!streamUrl) {
+        throw new Error('youtubei.js retornou formato de vídeo sem URL.');
+      }
+
+      const response = await fetch(streamUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': YOUTUBE_FETCH_USER_AGENT,
+          Referer: 'https://www.youtube.com/'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Falha ao baixar vídeo via youtubei.js (HTTP ${response.status}).`);
+      }
+
+      const declaredLength = Number(response.headers.get('content-length') || 0);
+      if (Number.isFinite(declaredLength) && declaredLength > MAX_INGEST_MEDIA_BYTES) {
+        throw new Error(
+          `Vídeo muito grande para ingestão (${Math.round(declaredLength / 1024 / 1024)}MB). ` +
+          `Limite atual: ${Math.round(MAX_INGEST_MEDIA_BYTES / 1024 / 1024)}MB.`
+        );
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      if (!buffer.length) {
+        throw new Error('Stream de vídeo via youtubei.js retornou vazio.');
+      }
+      if (buffer.length > MAX_INGEST_MEDIA_BYTES) {
+        throw new Error(
+          `Vídeo muito grande para ingestão (${Math.round(buffer.length / 1024 / 1024)}MB). ` +
+          `Limite atual: ${Math.round(MAX_INGEST_MEDIA_BYTES / 1024 / 1024)}MB.`
+        );
+      }
+
+      const formatMime = format?.mime_type || format?.mimeType;
+      const mimeType = normalizeMimeType(formatMime || response.headers.get('content-type') || '', 'video/mp4');
+      const extension = mimeType.includes('webm') ? 'webm'
+        : mimeType.includes('quicktime') ? 'mov' : 'mp4';
+
+      return {
+        buffer,
+        fileName: `youtube-${videoId}.${extension}`,
+        mimeType,
+        sizeBytes: buffer.length
+      };
+    } catch (error) {
+      errors.push(`${client}: ${error?.message || String(error)}`);
+    }
+  }
+
+  throw new Error(
+    `youtubei.js não conseguiu baixar vídeo do YouTube.${errors.length ? ` Detalhes: ${errors.join(' | ')}` : ''}`.trim()
+  );
+}
+
 async function getYtdlCoreModule() {
   if (ytdlCoreModulePromise) return ytdlCoreModulePromise;
   ytdlCoreModulePromise = import('@distube/ytdl-core')
@@ -2425,6 +2507,12 @@ async function downloadYoutubeVideoWithYtDlp(youtubeUrl, options = {}) {
         const summary = stderr ? stderr.split('\n').slice(-2).join(' | ') : '';
         attemptErrors.push(`${strategy.label}: ${summary || error?.message || error}`);
       }
+    }
+
+    try {
+      return await downloadYoutubeVideoViaYoutubei(youtubeUrl);
+    } catch (youtubeiError) {
+      attemptErrors.push(`youtubei.js: ${youtubeiError?.message || youtubeiError}`);
     }
 
     throw new Error(
