@@ -145,7 +145,7 @@
             background: radial-gradient(ellipse at center, transparent 40%, rgba(6, 6, 6, 0.7) 100%);
         }
 
-        input[type="range"]::-webkit-slider-thumb {
+        input[type="range"].custom-range::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
             width: 12px;
@@ -154,6 +154,26 @@
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 0 10px rgba(200, 255, 0, 0.5);
+        }
+
+        #timelineScrubber::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 8px;
+            height: 38px;
+            background: linear-gradient(180deg, #dcff96, #a0ff42);
+            border-radius: 4px;
+            cursor: ew-resize;
+            box-shadow: 0 0 16px rgba(188, 255, 74, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            margin-top: -15px;
+            /* Centers the tall thumb on the track */
+        }
+
+        #timelineScrubber::-webkit-slider-runnable-track {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
         }
 
         .custom-scrollbar::-webkit-scrollbar {
@@ -340,29 +360,57 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            border-radius: 10px;
-            border: 1px solid rgba(188, 255, 72, 0.5);
-            background: linear-gradient(145deg, rgba(150, 255, 70, 0.24), rgba(87, 150, 50, 0.5));
+            border-radius: 8px;
+            border: 1px solid rgba(188, 255, 72, 0.4);
+            background: linear-gradient(180deg, rgba(160, 255, 60, 0.12), rgba(100, 200, 40, 0.25));
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             color: rgba(247, 255, 226, 0.95);
-            font-size: 0.92rem;
+            font-size: 0.8rem;
+            font-weight: 500;
             letter-spacing: 0.02em;
-            padding: 0.52rem 0.82rem;
+            padding: 0.4rem 0.8rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            box-shadow: inset 0 0 26px rgba(200, 255, 80, 0.22), 0 0 24px rgba(200, 255, 80, 0.18);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            user-select: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .timeline-clip-pill:hover {
+            border-color: rgba(188, 255, 72, 0.8);
+            background: linear-gradient(180deg, rgba(160, 255, 60, 0.2), rgba(100, 200, 40, 0.35));
+            box-shadow: 0 6px 16px rgba(160, 255, 50, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-50%) scale(1.02);
+            z-index: 10;
         }
 
         .timeline-clip-pill.blue {
-            border-color: rgba(100, 214, 255, 0.44);
-            background: linear-gradient(145deg, rgba(58, 114, 214, 0.32), rgba(22, 56, 122, 0.62));
-            box-shadow: inset 0 0 22px rgba(94, 194, 255, 0.18), 0 0 20px rgba(50, 165, 255, 0.14);
+            border-color: rgba(94, 194, 255, 0.35);
+            background: linear-gradient(180deg, rgba(50, 165, 255, 0.15), rgba(22, 56, 122, 0.3));
+            color: rgba(220, 240, 255, 0.95);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline-clip-pill.blue:hover {
+            border-color: rgba(94, 194, 255, 0.7);
+            background: linear-gradient(180deg, rgba(50, 165, 255, 0.25), rgba(22, 56, 122, 0.45));
+            box-shadow: 0 6px 16px rgba(50, 165, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .timeline-clip-pill.purple {
-            border-color: rgba(208, 148, 255, 0.42);
-            background: linear-gradient(145deg, rgba(164, 94, 242, 0.33), rgba(84, 35, 140, 0.66));
-            box-shadow: inset 0 0 22px rgba(205, 130, 255, 0.19), 0 0 20px rgba(197, 95, 255, 0.15);
+            border-color: rgba(210, 120, 255, 0.35);
+            background: linear-gradient(180deg, rgba(160, 80, 255, 0.15), rgba(80, 30, 150, 0.3));
+            color: rgba(245, 220, 255, 0.95);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline-clip-pill.purple:hover {
+            border-color: rgba(210, 120, 255, 0.7);
+            background: linear-gradient(180deg, rgba(160, 80, 255, 0.25), rgba(80, 30, 150, 0.45));
+            box-shadow: 0 6px 16px rgba(160, 80, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .timeline-wave {
@@ -433,13 +481,34 @@
 
         .timeline-tab {
             text-align: center;
-            color: rgba(255, 255, 255, 0.54);
+            color: rgba(255, 255, 255, 0.4);
             font-size: 0.76rem;
+            padding: 0.4rem 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .timeline-tab:hover {
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .timeline-tab.active {
             color: #d8ff7f;
             text-shadow: 0 0 12px rgba(188, 255, 72, 0.45);
+            font-weight: 500;
+        }
+
+        .timeline-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.6rem;
+            left: 20%;
+            right: 20%;
+            height: 2px;
+            background: #d8ff7f;
+            box-shadow: 0 0 8px rgba(188, 255, 72, 0.8);
+            border-radius: 2px;
         }
 
         .timeline-toggle {
@@ -5574,9 +5643,12 @@
                 captionList.innerHTML = clip.captions.map((caption) => `
                     <div class="caption-row flex gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors group relative cursor-text" data-caption-id="${caption.id}" data-caption-time="${caption.time}">
                         <div class="caption-accent hidden absolute left-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_8px_rgba(200,255,0,0.8)]"></div>
-                        <div class="caption-time text-xs text-white/40 font-mono mt-2 w-10 text-right">${formatTime(caption.time)}</div>
+                        <div class="caption-time text-xs text-white/40 font-mono mt-2 w-14 text-right flex flex-col items-end gap-1">
+                            <span>${formatTime(caption.time)}</span>
+                            <button class="text-[10px] text-accent/60 opacity-0 group-hover:opacity-100 hover:text-accent border border-accent/20 rounded px-1 py-0.5 transition-all outline-none" onclick="seekPlayback(${caption.time}); pausePlayback();">seek</button>
+                        </div>
                         <div class="flex-grow">
-                            <textarea class="w-full bg-transparent text-white text-sm resize-none outline-none font-medium leading-relaxed" rows="2" data-caption-id="${caption.id}">${escapeHtml(caption.text)}</textarea>
+                            <textarea class="w-full bg-transparent text-white text-sm resize-none outline-none font-medium leading-relaxed" rows="2" data-caption-id="${caption.id}" onfocus="pausePlayback(); setActiveCaptionRow(this.closest('.caption-row'));">${escapeHtml(caption.text)}</textarea>
                         </div>
                     </div>
                 `).join('');
@@ -7133,11 +7205,35 @@
                 if (event.target === timelineModal) closeTimelineEditor();
             });
 
+            let isTimelineScrubbing = false;
+
+            timelineScrubber.addEventListener('mousedown', () => {
+                isTimelineScrubbing = true;
+                if (getPlaybackStateIsPlaying()) pausePlayback();
+            });
+
+            timelineScrubber.addEventListener('touchstart', () => {
+                isTimelineScrubbing = true;
+                if (getPlaybackStateIsPlaying()) pausePlayback();
+            }, { passive: true });
+
+            timelineScrubber.addEventListener('mouseup', () => {
+                isTimelineScrubbing = false;
+            });
+
+            timelineScrubber.addEventListener('touchend', () => {
+                isTimelineScrubbing = false;
+            });
+
             timelineScrubber.addEventListener('input', () => {
                 const clip = getTimelineClip();
                 if (!clip) return;
                 const playhead = getTimelinePlayhead();
+
+                // Aggressive seek that halts playback immediately
+                if (getPlaybackStateIsPlaying()) pausePlayback();
                 seekPlayback(playhead);
+
                 syncTimelineUi();
             });
 
