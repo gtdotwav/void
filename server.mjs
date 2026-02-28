@@ -50,8 +50,10 @@ const FFPROBE_BIN = env.FFPROBE_PATH || 'ffprobe';
 const FFMPEG_HEALTH_TIMEOUT_MS = Number(env.FFMPEG_HEALTH_TIMEOUT_MS || 3500);
 const DATA_ROOT = IS_SERVERLESS_RUNTIME ? join(tmpdir(), 'jv-video-studio') : join(ROOT, 'data');
 const MAX_REMOTE_SOURCE_BYTES = Number(env.MAX_REMOTE_SOURCE_BYTES || 600 * 1024 * 1024);
-const MAX_INGEST_MEDIA_BYTES = Number(env.MAX_INGEST_MEDIA_BYTES || 180 * 1024 * 1024);
-const MAX_INGEST_DURATION_SECONDS = Number(env.MAX_INGEST_DURATION_SECONDS || 20 * 60);
+const DEFAULT_MAX_INGEST_MEDIA_BYTES = IS_SERVERLESS_RUNTIME ? (180 * 1024 * 1024) : (1024 * 1024 * 1024);
+const DEFAULT_MAX_INGEST_DURATION_SECONDS = IS_SERVERLESS_RUNTIME ? (20 * 60) : (4 * 60 * 60);
+const MAX_INGEST_MEDIA_BYTES = Number(env.MAX_INGEST_MEDIA_BYTES || DEFAULT_MAX_INGEST_MEDIA_BYTES);
+const MAX_INGEST_DURATION_SECONDS = Number(env.MAX_INGEST_DURATION_SECONDS || DEFAULT_MAX_INGEST_DURATION_SECONDS);
 const RENDER_SEGMENT_MIN_SEC = 0.04;
 const SERVERLESS_YT_DLP_PATH = env.YT_DLP_SERVERLESS_PATH || join(tmpdir(), 'yt-dlp');
 const BUNDLED_SERVERLESS_YT_DLP_PATH = env.YT_DLP_BUNDLED_PATH || join(ROOT, 'bin', 'yt-dlp_linux');
@@ -3148,10 +3150,14 @@ async function handleTranscribe(req, res) {
         const cookiesHint = needsCookies && !resolvedYoutubeCookies
           ? 'Dica: configure YOUTUBE_COOKIES (Netscape cookies.txt ou JSON exportado) para desbloquear vídeos protegidos por bot-check.'
           : '';
+        const serverlessHint = needsCookies && IS_SERVERLESS_RUNTIME
+          ? 'Ambiente serverless pode continuar bloqueado por IP de datacenter. Use backend local e abra: https://voidclip.vercel.app/?backend=http://127.0.0.1:8787'
+          : '';
         const message = [
           'Não foi possível obter áudio/captions reais deste vídeo no ambiente atual.',
           videoIdHint,
           cookiesHint,
+          serverlessHint,
           `Detalhes: ${combined}`
         ].filter(Boolean).join(' ');
         sendJson(res, fallbackError?.statusCode || error.statusCode || 422, {
@@ -3266,10 +3272,14 @@ async function handleYoutubeIngest(req, res) {
     const cookiesHint = needsCookies && !resolvedYoutubeCookies
       ? 'Dica: configure YouTube cookies (Netscape cookies.txt ou JSON exportado) para vídeos com bot-check.'
       : '';
+    const serverlessHint = needsCookies && IS_SERVERLESS_RUNTIME
+      ? 'Ambiente serverless pode continuar bloqueado por IP de datacenter. Use backend local e abra: https://voidclip.vercel.app/?backend=http://127.0.0.1:8787'
+      : '';
     const message = [
       'Não foi possível ingerir este vídeo do YouTube no ambiente atual.',
       videoIdHint,
       cookiesHint,
+      serverlessHint,
       `Detalhes: ${details}`
     ].filter(Boolean).join(' ');
     sendJson(res, error?.statusCode || 422, { error: message });
