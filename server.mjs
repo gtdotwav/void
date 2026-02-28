@@ -3159,10 +3159,10 @@ async function handleYoutubeIngest(req, res) {
   } catch (_error) {
     metadata = null;
   }
-  if (Number.isFinite(Number(metadata?.duration || 0)) && Number(metadata.duration) > MAX_INGEST_DURATION_SECONDS) {
+  if (Number.isFinite(Number(metadata?.duration || 0)) && Number(metadata?.duration || 0) > MAX_INGEST_DURATION_SECONDS) {
     sendJson(res, 413, {
-      error: `Vídeo muito longo para ingestão automática (${Math.round(Number(metadata.duration))}s). Limite atual: ${Math.round(MAX_INGEST_DURATION_SECONDS)}s.`,
-      duration: Number(metadata.duration),
+      error: `Vídeo muito longo para ingestão automática (${Math.round(Number(metadata?.duration || 0))}s). Limite atual: ${Math.round(MAX_INGEST_DURATION_SECONDS)}s.`,
+      duration: Number(metadata?.duration || 0),
       maxDuration: MAX_INGEST_DURATION_SECONDS
     });
     return;
