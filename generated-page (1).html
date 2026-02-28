@@ -1,17 +1,21 @@
-<html lang="en"><head>
+<html lang="en">
+
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VOID. Studio — Video Clipper Interface</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;700&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
-    
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;700&family=Syne:wght@500;700;800&display=swap"
+        rel="stylesheet">
+
+
     <!-- Iconify -->
     <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
-    
+
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -54,80 +58,154 @@
             --accent: #c8ff00;
         }
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        ::selection { background: var(--accent); color: var(--bg); }
-        html { scrollbar-width: thin; scrollbar-color: var(--accent) var(--bg); scroll-behavior: smooth; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        ::selection {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--bg);
+            scroll-behavior: smooth;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 2px;
+        }
 
         body {
             background-color: var(--bg);
             color: #f0f0f0;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
-            background-image: radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px);
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
             background-size: 24px 24px;
         }
 
         .scroll-progress {
-            position: fixed; top: 0; left: 0; z-index: 999;
-            height: 2px; background: var(--accent); width: 100%;
-            transform-origin: left; transform: scaleX(0); will-change: transform;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999;
+            height: 2px;
+            background: var(--accent);
+            width: 100%;
+            transform-origin: left;
+            transform: scaleX(0);
+            will-change: transform;
             box-shadow: 0 0 8px var(--accent);
         }
+
         .grain {
-            position: fixed; inset: 0; z-index: 9000; pointer-events: none; opacity: 0.03;
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            pointer-events: none;
+            opacity: 0.03;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            background-repeat: repeat; background-size: 180px;
+            background-repeat: repeat;
+            background-size: 180px;
         }
-        .canvas-wrap { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-        .canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+
+        .canvas-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .canvas-wrap canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
         .canvas-wrap::after {
-            content: ''; position: absolute; inset: 0; pointer-events: none;
-            background: radial-gradient(ellipse at center, transparent 40%, rgba(6,6,6,0.7) 100%);
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(6, 6, 6, 0.7) 100%);
         }
 
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none;
-            width: 12px; height: 12px;
-            background: #fff; border-radius: 50%;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(200,255,0,0.5);
+            box-shadow: 0 0 10px rgba(200, 255, 0, 0.5);
         }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(200,255,0,0.5); }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(200, 255, 0, 0.5);
+        }
 
         #automationBoardViewport {
             touch-action: none;
             cursor: grab;
         }
+
         #automationBoardViewport.is-panning {
             cursor: grabbing;
         }
+
         #automationBoardSurface {
             transform-origin: 0 0;
             will-change: transform;
             touch-action: none;
         }
+
         .automar-node {
             touch-action: none;
             cursor: grab;
             user-select: none;
         }
+
         .automar-node.is-dragging {
             cursor: grabbing;
             z-index: 50;
         }
+
         .automation-link {
             stroke: url(#automarFlowLine);
             stroke-width: 3;
             fill: none;
             opacity: 0.88;
         }
+
         .timeline-shell {
             position: relative;
             background:
@@ -139,6 +217,7 @@
                 inset 0 0 0 1px rgba(176, 225, 70, 0.18),
                 inset 0 0 38px rgba(145, 218, 44, 0.12);
         }
+
         .timeline-shell::before {
             content: '';
             position: absolute;
@@ -151,6 +230,7 @@
                 radial-gradient(circle at 38% 84%, rgba(255, 255, 255, 0.14) 0 1px, transparent 2px);
             opacity: 0.35;
         }
+
         .timeline-shell::after {
             content: '';
             position: absolute;
@@ -160,16 +240,19 @@
             border: 1px solid rgba(180, 250, 70, 0.14);
             box-shadow: inset 0 0 40px rgba(200, 255, 0, 0.08);
         }
+
         .timeline-shell-inner {
             position: relative;
             z-index: 1;
         }
+
         .timeline-glass {
             border: 1px solid rgba(176, 225, 70, 0.16);
             background: linear-gradient(160deg, rgba(7, 12, 24, 0.86), rgba(2, 5, 12, 0.76));
             box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 18px 44px rgba(0, 0, 0, 0.44);
             backdrop-filter: blur(12px);
         }
+
         .timeline-badge {
             display: inline-flex;
             align-items: center;
@@ -184,21 +267,25 @@
             font-size: 0.66rem;
             font-weight: 700;
         }
+
         .timeline-chip-btn {
             border: 1px solid rgba(188, 255, 72, 0.42);
             background: rgba(142, 225, 60, 0.12);
             color: #d4ff77;
             box-shadow: inset 0 0 14px rgba(154, 255, 73, 0.13);
         }
+
         .timeline-chip-btn:hover {
             background: rgba(188, 255, 72, 0.22);
         }
+
         .timeline-white-btn {
             border: 1px solid rgba(255, 255, 255, 0.32);
             background: rgba(255, 255, 255, 0.95);
             color: #111827;
             box-shadow: 0 10px 28px rgba(0, 0, 0, 0.36);
         }
+
         .timeline-ruler {
             display: grid;
             grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -208,6 +295,7 @@
             margin-bottom: 0.45rem;
             padding-left: 76px;
         }
+
         .timeline-track-grid {
             position: relative;
             border: 1px solid rgba(176, 225, 70, 0.16);
@@ -219,6 +307,7 @@
                 repeating-linear-gradient(to right, rgba(255, 255, 255, 0.06) 0, rgba(255, 255, 255, 0.06) 1px, transparent 1px, transparent 56px);
             box-shadow: inset 0 0 26px rgba(152, 255, 67, 0.08);
         }
+
         .timeline-track-row {
             display: grid;
             grid-template-columns: 78px minmax(0, 1fr);
@@ -226,9 +315,11 @@
             min-height: 64px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
+
         .timeline-track-row:last-child {
             border-bottom: 0;
         }
+
         .timeline-track-label {
             display: flex;
             align-items: center;
@@ -238,11 +329,13 @@
             color: rgba(230, 241, 255, 0.76);
             padding-left: 0.6rem;
         }
+
         .timeline-row-lane {
             position: relative;
             height: 100%;
             padding: 0.45rem 0.65rem;
         }
+
         .timeline-clip-pill {
             position: absolute;
             top: 50%;
@@ -259,16 +352,19 @@
             text-overflow: ellipsis;
             box-shadow: inset 0 0 26px rgba(200, 255, 80, 0.22), 0 0 24px rgba(200, 255, 80, 0.18);
         }
+
         .timeline-clip-pill.blue {
             border-color: rgba(100, 214, 255, 0.44);
             background: linear-gradient(145deg, rgba(58, 114, 214, 0.32), rgba(22, 56, 122, 0.62));
             box-shadow: inset 0 0 22px rgba(94, 194, 255, 0.18), 0 0 20px rgba(50, 165, 255, 0.14);
         }
+
         .timeline-clip-pill.purple {
             border-color: rgba(208, 148, 255, 0.42);
             background: linear-gradient(145deg, rgba(164, 94, 242, 0.33), rgba(84, 35, 140, 0.66));
             box-shadow: inset 0 0 22px rgba(205, 130, 255, 0.19), 0 0 20px rgba(197, 95, 255, 0.15);
         }
+
         .timeline-wave {
             position: absolute;
             right: 2%;
@@ -280,6 +376,7 @@
             background: repeating-linear-gradient(to right, rgba(160, 235, 255, 0.8) 0 2px, transparent 2px 6px);
             opacity: 0.72;
         }
+
         .timeline-playhead {
             position: absolute;
             top: 0;
@@ -293,6 +390,7 @@
             transition: left 120ms linear;
             z-index: 20;
         }
+
         .timeline-playhead::before {
             content: '';
             position: absolute;
@@ -304,6 +402,7 @@
             background: #d6ff7b;
             box-shadow: 0 0 16px rgba(188, 255, 72, 0.8);
         }
+
         .timeline-playhead-tag {
             position: absolute;
             bottom: -23px;
@@ -315,12 +414,14 @@
             text-shadow: 0 0 12px rgba(188, 255, 72, 0.65);
             white-space: nowrap;
         }
+
         .timeline-side-panel {
             border: 1px solid rgba(176, 225, 70, 0.18);
             border-radius: 16px;
             background: linear-gradient(170deg, rgba(10, 18, 32, 0.87), rgba(3, 8, 18, 0.88));
             box-shadow: inset 0 0 20px rgba(186, 255, 72, 0.08);
         }
+
         .timeline-tab-strip {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -329,15 +430,18 @@
             padding-bottom: 0.6rem;
             margin-bottom: 0.8rem;
         }
+
         .timeline-tab {
             text-align: center;
             color: rgba(255, 255, 255, 0.54);
             font-size: 0.76rem;
         }
+
         .timeline-tab.active {
             color: #d8ff7f;
             text-shadow: 0 0 12px rgba(188, 255, 72, 0.45);
         }
+
         .timeline-toggle {
             border: 1px solid rgba(176, 225, 70, 0.16);
             border-radius: 12px;
@@ -349,6 +453,7 @@
             color: rgba(235, 246, 255, 0.84);
             font-size: 0.88rem;
         }
+
         .timeline-toggle-dot {
             width: 30px;
             height: 17px;
@@ -357,6 +462,7 @@
             position: relative;
             box-shadow: 0 0 12px rgba(188, 255, 72, 0.45);
         }
+
         .timeline-toggle-dot::after {
             content: '';
             position: absolute;
@@ -367,6 +473,7 @@
             border-radius: 999px;
             background: #101419;
         }
+
         .timeline-soft-label {
             font-size: 0.66rem;
             letter-spacing: 0.12em;
@@ -375,6 +482,7 @@
         }
     </style>
 </head>
+
 <body class="font-body relative min-h-screen">
 
     <div class="scroll-progress" id="scrollProgress"></div>
@@ -384,37 +492,46 @@
     </div>
 
     <!-- Landing Page -->
-    <div id="landing-page" class="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 transition-opacity duration-500">
+    <div id="landing-page"
+        class="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 transition-opacity duration-500">
         <!-- Logo -->
         <div class="absolute top-8 left-8">
-            <span class="font-display text-lg font-bold tracking-widest text-white">VOID<span class="text-accent">.</span></span>
+            <span class="font-display text-lg font-bold tracking-widest text-white">VOID<span
+                    class="text-accent">.</span></span>
         </div>
 
         <div class="max-w-3xl mx-auto w-full text-center flex flex-col items-center animate-slide-up">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/70 mb-8 backdrop-blur-sm">
+            <div
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/70 mb-8 backdrop-blur-sm">
                 <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
                 v2.0 Beta is live
             </div>
-            
-            <h1 class="font-display text-5xl sm:text-6xl md:text-7xl font-semibold tracking-tighter text-white mb-6 leading-tight">
+
+            <h1
+                class="font-display text-5xl sm:text-6xl md:text-7xl font-semibold tracking-tighter text-white mb-6 leading-tight">
                 Extract <span class="text-accent italic pr-2">Viral</span> Shorts <br> from Long Videos.
             </h1>
-            
+
             <p class="text-sm md:text-base text-white/50 font-light max-w-xl mx-auto mb-10 leading-relaxed">
-                Paste a link or upload a file. Our AI analyzes the content, finds the most engaging hooks, and generates ready-to-post clips with captions in seconds.
+                Paste a link or upload a file. Our AI analyzes the content, finds the most engaging hooks, and generates
+                ready-to-post clips with captions in seconds.
             </p>
 
             <form id="earlyAccessForm" class="w-full max-w-md flex flex-col sm:flex-row gap-3">
-                <input type="email" placeholder="name@company.com" class="flex-grow bg-black/60 border border-white/10 rounded-xl py-4 px-5 text-sm text-white outline-none focus:border-accent/50 focus:bg-black/80 transition-all font-body placeholder:text-white/30 backdrop-blur-md">
-                <button type="submit" id="earlyAccessBtn" class="bg-white text-bg px-8 py-4 rounded-xl font-display font-semibold text-sm hover:bg-accent hover:shadow-[0_0_25px_rgba(200,255,0,0.25)] hover:-translate-y-0.5 transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                <input type="email" placeholder="name@company.com"
+                    class="flex-grow bg-black/60 border border-white/10 rounded-xl py-4 px-5 text-sm text-white outline-none focus:border-accent/50 focus:bg-black/80 transition-all font-body placeholder:text-white/30 backdrop-blur-md">
+                <button type="submit" id="earlyAccessBtn"
+                    class="bg-white text-bg px-8 py-4 rounded-xl font-display font-semibold text-sm hover:bg-accent hover:shadow-[0_0_25px_rgba(200,255,0,0.25)] hover:-translate-y-0.5 transition-all whitespace-nowrap flex items-center justify-center gap-2">
                     Get Early Access
                     <iconify-icon icon="solar:arrow-right-linear" width="16" height="16"></iconify-icon>
                 </button>
             </form>
-            
+
             <div class="mt-8 flex items-center gap-6 text-xs text-white/30 font-light">
-                <span class="flex items-center gap-1"><iconify-icon icon="solar:check-circle-linear"></iconify-icon> No credit card required</span>
-                <span class="flex items-center gap-1"><iconify-icon icon="solar:check-circle-linear"></iconify-icon> Cancel anytime</span>
+                <span class="flex items-center gap-1"><iconify-icon icon="solar:check-circle-linear"></iconify-icon> No
+                    credit card required</span>
+                <span class="flex items-center gap-1"><iconify-icon icon="solar:check-circle-linear"></iconify-icon>
+                    Cancel anytime</span>
             </div>
         </div>
     </div>
@@ -422,14 +539,19 @@
     <!-- Main App Interface (Initially Hidden) -->
     <div id="app-interface" class="hidden opacity-0 transition-opacity duration-700 pb-20">
         <!-- Navigation -->
-        <nav class="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-6 py-4 bg-black/50 backdrop-blur-xl border-b border-white/5 transition-all">
+        <nav
+            class="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-6 py-4 bg-black/50 backdrop-blur-xl border-b border-white/5 transition-all">
             <div class="flex items-center gap-12">
-                <a class="font-display text-lg font-bold tracking-widest text-white" href="#" id="homeLink">VOID<span class="text-accent">.</span></a>
+                <a class="font-display text-lg font-bold tracking-widest text-white" href="#" id="homeLink">VOID<span
+                        class="text-accent">.</span></a>
                 <div class="hidden md:flex gap-8">
                     <a href="#" class="text-xs font-medium text-accent border-b border-accent pb-1">Dashboard</a>
-                    <a href="#" class="text-xs font-normal text-white/50 hover:text-white transition-colors">Projects</a>
-                    <a href="#" class="text-xs font-normal text-white/50 hover:text-white transition-colors">Templates</a>
-                    <a href="#" class="text-xs font-normal text-white/50 hover:text-white transition-colors">Brand Kit</a>
+                    <a href="#"
+                        class="text-xs font-normal text-white/50 hover:text-white transition-colors">Projects</a>
+                    <a href="#"
+                        class="text-xs font-normal text-white/50 hover:text-white transition-colors">Templates</a>
+                    <a href="#" class="text-xs font-normal text-white/50 hover:text-white transition-colors">Brand
+                        Kit</a>
                 </div>
             </div>
             <div class="flex items-center gap-6">
@@ -437,8 +559,10 @@
                     <iconify-icon icon="solar:database-linear" width="14" height="14"></iconify-icon>
                     <span>120 / 300 mins left</span>
                 </div>
-                <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:border-accent transition-colors">
-                    <iconify-icon icon="solar:user-rounded-linear" class="text-white text-sm" width="16" height="16"></iconify-icon>
+                <button
+                    class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:border-accent transition-colors">
+                    <iconify-icon icon="solar:user-rounded-linear" class="text-white text-sm" width="16"
+                        height="16"></iconify-icon>
                 </button>
             </div>
         </nav>
@@ -447,24 +571,33 @@
 
             <!-- 1. Input / Generation Block -->
             <section id="inputSection" class="relative w-full max-w-4xl mx-auto">
-                <div class="absolute -top-1/2 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/10 blur-[120px] rounded-full pointer-events-none"></div>
-                
-                <div class="relative bg-white/[0.02] border border-white/10 rounded-2xl p-8 sm:p-10 backdrop-blur-xl overflow-hidden shadow-2xl">
+                <div
+                    class="absolute -top-1/2 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/10 blur-[120px] rounded-full pointer-events-none">
+                </div>
+
+                <div
+                    class="relative bg-white/[0.02] border border-white/10 rounded-2xl p-8 sm:p-10 backdrop-blur-xl overflow-hidden shadow-2xl">
                     <div class="text-center mb-8">
-                        <h2 class="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-3">Create New Project</h2>
-                        <p class="text-xs sm:text-sm text-white/50 font-light max-w-xl mx-auto">Paste a link or upload a file to generate clips instantly.</p>
+                        <h2 class="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-3">
+                            Create New Project</h2>
+                        <p class="text-xs sm:text-sm text-white/50 font-light max-w-xl mx-auto">Paste a link or upload a
+                            file to generate clips instantly.</p>
                     </div>
 
                     <form id="generateForm" class="flex flex-col gap-4">
                         <div class="flex flex-col sm:flex-row gap-3">
                             <div class="relative flex-grow">
                                 <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                    <iconify-icon icon="solar:link-circle-linear" class="text-white/40 text-xl" width="20" height="20"></iconify-icon>
+                                    <iconify-icon icon="solar:link-circle-linear" class="text-white/40 text-xl"
+                                        width="20" height="20"></iconify-icon>
                                 </div>
-                                <input type="text" id="videoUrlInput" placeholder="Paste YouTube or Drive URL here..." class="w-full bg-black/60 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-accent/50 focus:bg-black/80 transition-all font-body placeholder:text-white/30 shadow-inner">
+                                <input type="text" id="videoUrlInput" placeholder="Paste YouTube or Drive URL here..."
+                                    class="w-full bg-black/60 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-accent/50 focus:bg-black/80 transition-all font-body placeholder:text-white/30 shadow-inner">
                             </div>
-                            <button type="submit" id="generateBtn" class="bg-accent text-bg px-8 py-4 rounded-xl font-display font-semibold text-sm hover:shadow-[0_0_25px_rgba(200,255,0,0.25)] hover:-translate-y-0.5 transition-all whitespace-nowrap flex items-center justify-center gap-2">
-                                <iconify-icon icon="solar:magic-stick-3-linear" class="text-lg" width="18" height="18"></iconify-icon>
+                            <button type="submit" id="generateBtn"
+                                class="bg-accent text-bg px-8 py-4 rounded-xl font-display font-semibold text-sm hover:shadow-[0_0_25px_rgba(200,255,0,0.25)] hover:-translate-y-0.5 transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                                <iconify-icon icon="solar:magic-stick-3-linear" class="text-lg" width="18"
+                                    height="18"></iconify-icon>
                                 <span>Generate Clips</span>
                             </button>
                         </div>
@@ -476,20 +609,27 @@
                         </div>
 
                         <!-- Drag & Drop -->
-                        <label id="dropZone" class="border border-dashed border-white/15 rounded-xl py-10 flex flex-col items-center justify-center cursor-pointer hover:border-accent/40 hover:bg-white/[0.02] transition-colors group relative">
+                        <label id="dropZone"
+                            class="border border-dashed border-white/15 rounded-xl py-10 flex flex-col items-center justify-center cursor-pointer hover:border-accent/40 hover:bg-white/[0.02] transition-colors group relative">
                             <input type="file" class="hidden" accept="video/*" id="fileInput">
-                            <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-                                <iconify-icon icon="solar:upload-minimalistic-linear" class="text-2xl text-white/60 group-hover:text-accent transition-colors" width="24" height="24"></iconify-icon>
+                            <div
+                                class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                                <iconify-icon icon="solar:upload-minimalistic-linear"
+                                    class="text-2xl text-white/60 group-hover:text-accent transition-colors" width="24"
+                                    height="24"></iconify-icon>
                             </div>
-                            <span class="text-sm text-white/80 font-medium mb-1" id="dropText">Click to upload or drag &amp; drop</span>
+                            <span class="text-sm text-white/80 font-medium mb-1" id="dropText">Click to upload or drag
+                                &amp; drop</span>
                             <span class="text-xs text-white/40 font-light">MP4, MOV, WEBM (Max 2GB)</span>
                         </label>
                         <p id="generateStatus" class="text-xs text-white/50 min-h-[1.2rem]"></p>
 
                         <div class="rounded-xl border border-white/10 bg-black/20 p-4 sm:p-5 space-y-4">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <h3 class="text-xs font-semibold text-white/70 tracking-widest uppercase">Fluxo Guiado</h3>
-                                <span id="workflowStageBadge" class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/50">
+                                <h3 class="text-xs font-semibold text-white/70 tracking-widest uppercase">Fluxo Guiado
+                                </h3>
+                                <span id="workflowStageBadge"
+                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/50">
                                     Etapa 1/5
                                 </span>
                             </div>
@@ -497,34 +637,48 @@
                                 Próximo passo: cole um link de vídeo (YouTube) ou envie um arquivo.
                             </p>
                             <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]">
-                                <div id="wfSourceCard" class="rounded-lg border border-accent/40 bg-accent/[0.06] px-2 py-2">
+                                <div id="wfSourceCard"
+                                    class="rounded-lg border border-accent/40 bg-accent/[0.06] px-2 py-2">
                                     <p class="text-white/80 font-medium">1. Fonte</p>
                                     <p id="wfSourceState" class="text-accent mt-1">Em andamento</p>
                                 </div>
-                                <div id="wfClipsCard" class="rounded-lg border border-white/10 bg-white/[0.01] px-2 py-2">
+                                <div id="wfClipsCard"
+                                    class="rounded-lg border border-white/10 bg-white/[0.01] px-2 py-2">
                                     <p class="text-white/70 font-medium">2. Clips</p>
                                     <p id="wfClipsState" class="text-white/40 mt-1">Pendente</p>
                                 </div>
-                                <div id="wfEditorCard" class="rounded-lg border border-white/10 bg-white/[0.01] px-2 py-2">
+                                <div id="wfEditorCard"
+                                    class="rounded-lg border border-white/10 bg-white/[0.01] px-2 py-2">
                                     <p class="text-white/70 font-medium">3. Editor</p>
                                     <p id="wfEditorState" class="text-white/40 mt-1">Pendente</p>
                                 </div>
-                                <div id="wfCaptionCard" class="rounded-lg border border-white/10 bg-white/[0.01] px-2 py-2">
+                                <div id="wfCaptionCard"
+                                    class="rounded-lg border border-white/10 bg-white/[0.01] px-2 py-2">
                                     <p class="text-white/70 font-medium">4. Legendas</p>
                                     <p id="wfCaptionState" class="text-white/40 mt-1">Pendente</p>
                                 </div>
-                                <div id="wfDeliveryCard" class="rounded-lg border border-white/10 bg-white/[0.01] px-2 py-2">
+                                <div id="wfDeliveryCard"
+                                    class="rounded-lg border border-white/10 bg-white/[0.01] px-2 py-2">
                                     <p class="text-white/70 font-medium">5. Entrega</p>
                                     <p id="wfDeliveryState" class="text-white/40 mt-1">Pendente</p>
                                 </div>
                             </div>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" id="guideFocusSourceBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors">Ir para Fonte</button>
-                                <button type="button" id="guideOpenEditorBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Abrir 1º Clip</button>
-                                <button type="button" id="guideTranscribeBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Reajustar</button>
-                                <button type="button" id="guideExportBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Exportar</button>
-                                <button type="button" id="guidePackBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Gerar Pack</button>
-                                <button type="button" id="guideDiagnoseBtn" class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors">Diagnosticar</button>
+                                <button type="button" id="guideFocusSourceBtn"
+                                    class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors">Ir
+                                    para Fonte</button>
+                                <button type="button" id="guideOpenEditorBtn"
+                                    class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Abrir
+                                    1º Clip</button>
+                                <button type="button" id="guideTranscribeBtn"
+                                    class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Reajustar</button>
+                                <button type="button" id="guideExportBtn"
+                                    class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Exportar</button>
+                                <button type="button" id="guidePackBtn"
+                                    class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Gerar
+                                    Pack</button>
+                                <button type="button" id="guideDiagnoseBtn"
+                                    class="text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors">Diagnosticar</button>
                             </div>
                             <p id="backendStatus" class="text-[11px] text-white/40 min-h-[1rem]">Checando backend...</p>
                         </div>
@@ -536,27 +690,38 @@
             <section id="resultsSection" class="hidden opacity-0 transition-opacity duration-500">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                     <div>
-                        <h2 class="font-display text-2xl font-semibold tracking-tight text-white flex items-center gap-3">
-                            <iconify-icon icon="solar:gallery-video-linear" class="text-accent" width="24" height="24"></iconify-icon>
+                        <h2
+                            class="font-display text-2xl font-semibold tracking-tight text-white flex items-center gap-3">
+                            <iconify-icon icon="solar:gallery-video-linear" class="text-accent" width="24"
+                                height="24"></iconify-icon>
                             Generated Clips
                         </h2>
                         <p id="sourceSummary" class="text-xs text-white/40 mt-1">Source: No video loaded yet</p>
                     </div>
-                    
-                    <div class="flex flex-wrap items-center gap-2 bg-white/5 border border-white/10 p-1 rounded-lg backdrop-blur-md" id="filterContainer">
-                        <button class="filter-btn active px-3 py-1.5 rounded bg-white/10 text-white text-xs font-medium shadow-sm" data-filter="all">All (3)</button>
-                        <button class="filter-btn px-3 py-1.5 rounded hover:bg-white/5 text-white/50 hover:text-white transition-colors text-xs font-medium" data-filter="highscore">High Score</button>
-                        <button class="filter-btn px-3 py-1.5 rounded hover:bg-white/5 text-white/50 hover:text-white transition-colors text-xs font-medium" data-filter="drafts">Drafts</button>
+
+                    <div class="flex flex-wrap items-center gap-2 bg-white/5 border border-white/10 p-1 rounded-lg backdrop-blur-md"
+                        id="filterContainer">
+                        <button
+                            class="filter-btn active px-3 py-1.5 rounded bg-white/10 text-white text-xs font-medium shadow-sm"
+                            data-filter="all">All (3)</button>
+                        <button
+                            class="filter-btn px-3 py-1.5 rounded hover:bg-white/5 text-white/50 hover:text-white transition-colors text-xs font-medium"
+                            data-filter="highscore">High Score</button>
+                        <button
+                            class="filter-btn px-3 py-1.5 rounded hover:bg-white/5 text-white/50 hover:text-white transition-colors text-xs font-medium"
+                            data-filter="drafts">Drafts</button>
                         <div class="h-5 w-px bg-white/10 mx-1 hidden sm:block"></div>
                         <label class="flex items-center gap-1 text-[11px] text-white/50">
                             <span>Tema</span>
-                            <select id="themeFilterSelect" class="bg-black/60 border border-white/15 rounded px-2 py-1 text-[11px] text-white/80 outline-none focus:border-accent/40">
+                            <select id="themeFilterSelect"
+                                class="bg-black/60 border border-white/15 rounded px-2 py-1 text-[11px] text-white/80 outline-none focus:border-accent/40">
                                 <option value="all">Todos</option>
                             </select>
                         </label>
                         <label class="flex items-center gap-1 text-[11px] text-white/50">
                             <span>Assunto</span>
-                            <select id="subjectFilterSelect" class="bg-black/60 border border-white/15 rounded px-2 py-1 text-[11px] text-white/80 outline-none focus:border-accent/40">
+                            <select id="subjectFilterSelect"
+                                class="bg-black/60 border border-white/15 rounded px-2 py-1 text-[11px] text-white/80 outline-none focus:border-accent/40">
                                 <option value="all">Todos</option>
                             </select>
                         </label>
@@ -565,29 +730,45 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="clipGrid">
                     <!-- Clip Card 1 -->
-                    <div class="clip-card group relative bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]" data-category="highscore">
+                    <div class="clip-card group relative bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]"
+                        data-category="highscore">
                         <div class="relative aspect-[9/16] bg-black/80 overflow-hidden cursor-pointer play-trigger">
-                            <img src="https://images.unsplash.com/photo-1720962158858-5fb16991d2b8?w=800&amp;q=80" alt="Thumbnail" class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 group-hover:scale-105 transform">
-                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div class="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-transform">
-                                    <iconify-icon icon="solar:play-bold" class="text-white text-2xl translate-x-[2px]" width="24" height="24"></iconify-icon>
+                            <img src="https://images.unsplash.com/photo-1720962158858-5fb16991d2b8?w=800&amp;q=80"
+                                alt="Thumbnail"
+                                class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 group-hover:scale-105 transform">
+                            <div
+                                class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div
+                                    class="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-transform">
+                                    <iconify-icon icon="solar:play-bold" class="text-white text-2xl translate-x-[2px]"
+                                        width="24" height="24"></iconify-icon>
                                 </div>
                             </div>
-                            <div class="absolute top-3 left-3 bg-accent text-bg text-xs font-semibold tracking-wide uppercase px-2 py-1 rounded shadow-[0_0_15px_rgba(200,255,0,0.4)] flex items-center gap-1">
+                            <div
+                                class="absolute top-3 left-3 bg-accent text-bg text-xs font-semibold tracking-wide uppercase px-2 py-1 rounded shadow-[0_0_15px_rgba(200,255,0,0.4)] flex items-center gap-1">
                                 <iconify-icon icon="solar:flame-bold" width="12" height="12"></iconify-icon> Score 99
                             </div>
-                            <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white/90 text-xs px-1.5 py-0.5 rounded border border-white/10 font-mono">0:58</div>
+                            <div
+                                class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white/90 text-xs px-1.5 py-0.5 rounded border border-white/10 font-mono">
+                                0:58</div>
                         </div>
                         <div class="p-4 border-t border-white/5">
-                            <h3 class="font-display font-medium text-sm text-white/90 line-clamp-2 leading-snug mb-4 group-hover:text-accent transition-colors clip-title">VR headsets will replace monitors in 3 years</h3>
+                            <h3
+                                class="font-display font-medium text-sm text-white/90 line-clamp-2 leading-snug mb-4 group-hover:text-accent transition-colors clip-title">
+                                VR headsets will replace monitors in 3 years</h3>
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-white/40 uppercase tracking-wider">Hook: Spatial</span>
                                 <div class="flex gap-2">
-                                    <button class="edit-btn w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors" title="Edit">
+                                    <button
+                                        class="edit-btn w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors"
+                                        title="Edit">
                                         <iconify-icon icon="solar:pen-linear" width="16" height="16"></iconify-icon>
                                     </button>
-                                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/10 hover:bg-accent/20 border border-accent/20 text-accent transition-colors" title="Export">
-                                        <iconify-icon icon="solar:download-minimalistic-linear" width="16" height="16"></iconify-icon>
+                                    <button
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg bg-accent/10 hover:bg-accent/20 border border-accent/20 text-accent transition-colors"
+                                        title="Export">
+                                        <iconify-icon icon="solar:download-minimalistic-linear" width="16"
+                                            height="16"></iconify-icon>
                                     </button>
                                 </div>
                             </div>
@@ -595,73 +776,112 @@
                     </div>
 
                     <!-- Clip Card 2 -->
-                    <div class="clip-card group relative bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]" data-category="highscore">
+                    <div class="clip-card group relative bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]"
+                        data-category="highscore">
                         <div class="relative aspect-[9/16] bg-black/80 overflow-hidden cursor-pointer play-trigger">
-                            <img src="https://images.unsplash.com/photo-1720962158919-6c5f5f99630d?w=800&amp;q=80" alt="Thumbnail" class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 group-hover:scale-105 transform">
-                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div class="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-transform">
-                                    <iconify-icon icon="solar:play-bold" class="text-white text-2xl translate-x-[2px]" width="24" height="24"></iconify-icon>
+                            <img src="https://images.unsplash.com/photo-1720962158919-6c5f5f99630d?w=800&amp;q=80"
+                                alt="Thumbnail"
+                                class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 group-hover:scale-105 transform">
+                            <div
+                                class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div
+                                    class="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-transform">
+                                    <iconify-icon icon="solar:play-bold" class="text-white text-2xl translate-x-[2px]"
+                                        width="24" height="24"></iconify-icon>
                                 </div>
                             </div>
-                            <div class="absolute top-3 left-3 bg-white text-bg text-xs font-semibold tracking-wide uppercase px-2 py-1 rounded flex items-center gap-1">
+                            <div
+                                class="absolute top-3 left-3 bg-white text-bg text-xs font-semibold tracking-wide uppercase px-2 py-1 rounded flex items-center gap-1">
                                 Score 85
                             </div>
-                            <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white/90 text-xs px-1.5 py-0.5 rounded border border-white/10 font-mono">0:42</div>
+                            <div
+                                class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white/90 text-xs px-1.5 py-0.5 rounded border border-white/10 font-mono">
+                                0:42</div>
                         </div>
                         <div class="p-4 border-t border-white/5">
-                            <h3 class="font-display font-medium text-sm text-white/90 line-clamp-2 leading-snug mb-4 group-hover:text-accent transition-colors clip-title">Why Apple Vision Pro changes the design game</h3>
+                            <h3
+                                class="font-display font-medium text-sm text-white/90 line-clamp-2 leading-snug mb-4 group-hover:text-accent transition-colors clip-title">
+                                Why Apple Vision Pro changes the design game</h3>
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-white/40 uppercase tracking-wider">Hook: Design</span>
                                 <div class="flex gap-2">
-                                    <button class="edit-btn w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors" title="Edit">
+                                    <button
+                                        class="edit-btn w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors"
+                                        title="Edit">
                                         <iconify-icon icon="solar:pen-linear" width="16" height="16"></iconify-icon>
                                     </button>
-                                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors" title="Export">
-                                        <iconify-icon icon="solar:download-minimalistic-linear" width="16" height="16"></iconify-icon>
+                                    <button
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors"
+                                        title="Export">
+                                        <iconify-icon icon="solar:download-minimalistic-linear" width="16"
+                                            height="16"></iconify-icon>
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                     <!-- Clip Card 3 -->
-                    <div class="clip-card group relative bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]" data-category="drafts">
+                    <!-- Clip Card 3 -->
+                    <div class="clip-card group relative bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-400 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]"
+                        data-category="drafts">
                         <div class="relative aspect-[9/16] bg-black/80 overflow-hidden cursor-pointer play-trigger">
-                            <img src="https://images.unsplash.com/photo-1720962158789-9389a4f399da?w=800&amp;q=80" alt="Thumbnail" class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 group-hover:scale-105 transform">
-                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div class="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-transform">
-                                    <iconify-icon icon="solar:play-bold" class="text-white text-2xl translate-x-[2px]" width="24" height="24"></iconify-icon>
+                            <img src="https://images.unsplash.com/photo-1720962158789-9389a4f399da?w=800&amp;q=80"
+                                alt="Thumbnail"
+                                class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 group-hover:scale-105 transform">
+                            <div
+                                class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div
+                                    class="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-transform">
+                                    <iconify-icon icon="solar:play-bold" class="text-white text-2xl translate-x-[2px]"
+                                        width="24" height="24"></iconify-icon>
                                 </div>
                             </div>
-                            <div class="absolute top-3 left-3 bg-white/20 backdrop-blur-md text-white border border-white/10 text-xs font-semibold tracking-wide uppercase px-2 py-1 rounded flex items-center gap-1">
+                            <div
+                                class="absolute top-3 left-3 bg-white/20 backdrop-blur-md text-white border border-white/10 text-xs font-semibold tracking-wide uppercase px-2 py-1 rounded flex items-center gap-1">
                                 Draft
                             </div>
-                            <div class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white/90 text-xs px-1.5 py-0.5 rounded border border-white/10 font-mono">0:30</div>
+                            <div
+                                class="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white/90 text-xs px-1.5 py-0.5 rounded border border-white/10 font-mono">
+                                0:30</div>
                         </div>
                         <div class="p-4 border-t border-white/5">
-                            <h3 class="font-display font-medium text-sm text-white/90 line-clamp-2 leading-snug mb-4 group-hover:text-accent transition-colors clip-title">The hidden cost of immersive reality</h3>
+                            <h3
+                                class="font-display font-medium text-sm text-white/90 line-clamp-2 leading-snug mb-4 group-hover:text-accent transition-colors clip-title">
+                                The hidden cost of immersive reality</h3>
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-white/40 uppercase tracking-wider">Hook: Cost</span>
                                 <div class="flex gap-2">
-                                    <button class="edit-btn w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors" title="Edit">
+                                    <button
+                                        class="edit-btn w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors"
+                                        title="Edit">
                                         <iconify-icon icon="solar:pen-linear" width="16" height="16"></iconify-icon>
                                     </button>
-                                    <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors" title="Export">
-                                        <iconify-icon icon="solar:download-minimalistic-linear" width="16" height="16"></iconify-icon>
+                                    <button
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-colors"
+                                        title="Export">
+                                        <iconify-icon icon="solar:download-minimalistic-linear" width="16"
+                                            height="16"></iconify-icon>
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                     <!-- Generation Loading Card (Dynamic) -->
-                    <div id="processingCard" class="hidden relative bg-white/[0.01] border border-dashed border-white/20 rounded-xl overflow-hidden backdrop-blur-sm flex flex-col items-center justify-center min-h-[300px]">
+                    <!-- Generation Loading Card (Dynamic) -->
+                    <div id="processingCard"
+                        class="hidden relative bg-white/[0.01] border border-dashed border-white/20 rounded-xl overflow-hidden backdrop-blur-sm flex flex-col items-center justify-center min-h-[300px]">
                         <div class="relative w-16 h-16 mb-4">
-                            <svg class="animate-spin text-accent/20 w-full h-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
-                                <path class="opacity-75 text-accent" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg class="animate-spin text-accent/20 w-full h-full" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="2"></circle>
+                                <path class="opacity-75 text-accent" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
-                            <iconify-icon icon="solar:cpu-bold-duotone" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-accent text-xl" width="24" height="24"></iconify-icon>
+                            <iconify-icon icon="solar:cpu-bold-duotone"
+                                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-accent text-xl"
+                                width="24" height="24"></iconify-icon>
                         </div>
                         <span class="text-sm font-medium text-white/70 font-display">Processing...</span>
                         <span class="text-xs text-white/40 mt-1">Finding more hooks</span>
@@ -670,93 +890,132 @@
             </section>
 
             <!-- 3. Active Editor Workspace (Hidden until edited) -->
-            <section id="editorSection" class="hidden opacity-0 transition-opacity duration-500 pt-16 border-t border-white/10 mt-8">
+            <section id="editorSection"
+                class="hidden opacity-0 transition-opacity duration-500 pt-16 border-t border-white/10 mt-8">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                     <div>
-                        <div class="text-accent text-xs font-medium tracking-widest uppercase mb-2 flex items-center gap-2">
-                            <iconify-icon icon="solar:video-frame-linear" width="14" height="14"></iconify-icon> Advanced Editor
+                        <div
+                            class="text-accent text-xs font-medium tracking-widest uppercase mb-2 flex items-center gap-2">
+                            <iconify-icon icon="solar:video-frame-linear" width="14" height="14"></iconify-icon>
+                            Advanced Editor
                         </div>
-                        <h2 id="editorTitle" class="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-white line-clamp-1">Select a clip to edit</h2>
+                        <h2 id="editorTitle"
+                            class="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-white line-clamp-1">
+                            Select a clip to edit</h2>
                         <div class="mt-4 flex flex-wrap gap-3">
                             <label class="text-xs text-white/70 flex items-center gap-2">
                                 Start
-                                <input id="clipStartInput" type="number" min="0" step="0.1" class="w-24 bg-black/60 border border-white/15 rounded-lg px-2 py-1 text-white text-xs outline-none focus:border-accent/50">
+                                <input id="clipStartInput" type="number" min="0" step="0.1"
+                                    class="w-24 bg-black/60 border border-white/15 rounded-lg px-2 py-1 text-white text-xs outline-none focus:border-accent/50">
                             </label>
                             <label class="text-xs text-white/70 flex items-center gap-2">
                                 End
-                                <input id="clipEndInput" type="number" min="0" step="0.1" class="w-24 bg-black/60 border border-white/15 rounded-lg px-2 py-1 text-white text-xs outline-none focus:border-accent/50">
+                                <input id="clipEndInput" type="number" min="0" step="0.1"
+                                    class="w-24 bg-black/60 border border-white/15 rounded-lg px-2 py-1 text-white text-xs outline-none focus:border-accent/50">
                             </label>
                             <span id="clipDurationLabel" class="text-xs text-white/50 self-center"></span>
                         </div>
                         <p id="editorStatus" class="text-xs text-white/50 mt-2 min-h-[1.1rem]"></p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button id="openTimelineBtn" class="px-4 py-2.5 rounded-xl font-medium text-xs border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors flex items-center gap-2">
+                        <button id="openTimelineBtn"
+                            class="px-4 py-2.5 rounded-xl font-medium text-xs border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors flex items-center gap-2">
                             <iconify-icon icon="solar:video-frame-cut-2-linear" width="16" height="16"></iconify-icon>
                             Timeline+
                         </button>
-                        <button id="renderBtn" class="bg-white text-bg px-6 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-200 transition-colors flex items-center gap-2 shadow-lg min-w-[150px] justify-center">
-                            <iconify-icon icon="solar:export-linear" width="18" height="18"></iconify-icon> <span>Render Video</span>
+                        <button id="renderBtn"
+                            class="bg-white text-bg px-6 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-200 transition-colors flex items-center gap-2 shadow-lg min-w-[150px] justify-center">
+                            <iconify-icon icon="solar:export-linear" width="18" height="18"></iconify-icon> <span>Render
+                                Video</span>
                         </button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[700px]">
-                    
-                    <!-- Left: Video Preview -->
-                    <div class="lg:col-span-5 xl:col-span-4 bg-black/40 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-md">
-                        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E')"></div>
 
-                        <div class="w-full max-w-[320px] aspect-[9/16] bg-black rounded-xl border border-white/15 relative overflow-hidden shadow-2xl z-10 group">
-                            <video id="editorVideo" class="absolute inset-0 w-full h-full object-cover opacity-80 transition-opacity" playsinline preload="metadata"></video>
+                    <!-- Left: Video Preview -->
+                    <div
+                        class="lg:col-span-5 xl:col-span-4 bg-black/40 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-md">
+                        <div class="absolute inset-0 opacity-20 pointer-events-none"
+                            style="background-image: url('data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E')">
+                        </div>
+
+                        <div
+                            class="w-full max-w-[320px] aspect-[9/16] bg-black rounded-xl border border-white/15 relative overflow-hidden shadow-2xl z-10 group">
+                            <video id="editorVideo"
+                                class="absolute inset-0 w-full h-full object-cover opacity-80 transition-opacity"
+                                playsinline preload="metadata"></video>
                             <div id="editorYoutubeWrap" class="absolute inset-0 hidden bg-black">
                                 <div id="editorYoutubePlayer" class="w-full h-full"></div>
                             </div>
-                            <div id="editorYoutubeBlockedWrap" class="absolute inset-0 hidden items-center justify-center p-5 bg-black/90">
+                            <div id="editorYoutubeBlockedWrap"
+                                class="absolute inset-0 hidden items-center justify-center p-5 bg-black/90">
                                 <div class="rounded-xl border border-white/10 bg-black/70 px-4 py-4 text-center">
-                                    <div class="w-10 h-10 rounded-full mx-auto mb-3 bg-white/5 border border-white/10 flex items-center justify-center text-white/70">
-                                        <iconify-icon icon="solar:video-frame-cut-2-linear" width="18" height="18"></iconify-icon>
+                                    <div
+                                        class="w-10 h-10 rounded-full mx-auto mb-3 bg-white/5 border border-white/10 flex items-center justify-center text-white/70">
+                                        <iconify-icon icon="solar:video-frame-cut-2-linear" width="18"
+                                            height="18"></iconify-icon>
                                     </div>
                                     <p id="editorYoutubeBlockedText" class="text-xs text-white/70 leading-relaxed">
-                                        Este vídeo não permite preview incorporado. Você ainda pode editar cortes, legendas e gerar pack.
+                                        Este vídeo não permite preview incorporado. Você ainda pode editar cortes,
+                                        legendas e gerar pack.
                                     </p>
                                 </div>
                             </div>
 
-                            <div id="captionPreviewOverlay" class="absolute inset-0 flex items-end justify-center px-4 pb-8 pointer-events-none">
-                                <div id="captionPreviewText" class="text-center max-w-[92%] leading-tight font-semibold text-white drop-shadow-[0_3px_16px_rgba(0,0,0,0.9)]">
+                            <div id="captionPreviewOverlay"
+                                class="absolute inset-0 flex items-end justify-center px-4 pb-8 pointer-events-none">
+                                <div id="captionPreviewText"
+                                    class="text-center max-w-[92%] leading-tight font-semibold text-white drop-shadow-[0_3px_16px_rgba(0,0,0,0.9)]">
                                     Your caption will appear here.
                                 </div>
                             </div>
                             <div id="clipOverlayLayer" class="absolute inset-0 pointer-events-none z-[12]"></div>
 
-                            <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-                                <div class="h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer relative overflow-hidden" id="videoProgress">
-                                    <div class="absolute top-0 left-0 h-full bg-accent w-[45%] rounded-full shadow-[0_0_10px_rgba(200,255,0,0.8)]" id="videoProgressBar"></div>
+                            <div
+                                class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+                                <div class="h-1.5 bg-white/20 rounded-full mb-4 cursor-pointer relative overflow-hidden"
+                                    id="videoProgress">
+                                    <div class="absolute top-0 left-0 h-full bg-accent w-[45%] rounded-full shadow-[0_0_10px_rgba(200,255,0,0.8)]"
+                                        id="videoProgressBar"></div>
                                 </div>
                                 <div class="flex justify-between items-center text-white">
-                                    <button id="mainPlayBtn" class="hover:text-accent transition-colors w-8 h-8 flex items-center justify-center bg-white/10 rounded-full backdrop-blur-sm"><iconify-icon icon="solar:play-bold" width="16" height="16" id="mainPlayIcon" class="translate-x-[1px]"></iconify-icon></button>
-                                    <span class="text-xs font-mono tracking-wider opacity-70" id="videoTime">0:26 / 0:58</span>
-                                    <button class="hover:text-accent transition-colors"><iconify-icon icon="solar:maximize-linear" width="18" height="18"></iconify-icon></button>
+                                    <button id="mainPlayBtn"
+                                        class="hover:text-accent transition-colors w-8 h-8 flex items-center justify-center bg-white/10 rounded-full backdrop-blur-sm"><iconify-icon
+                                            icon="solar:play-bold" width="16" height="16" id="mainPlayIcon"
+                                            class="translate-x-[1px]"></iconify-icon></button>
+                                    <span class="text-xs font-mono tracking-wider opacity-70" id="videoTime">0:26 /
+                                        0:58</span>
+                                    <button class="hover:text-accent transition-colors"><iconify-icon
+                                            icon="solar:maximize-linear" width="18" height="18"></iconify-icon></button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Right: Editor Tools -->
-                    <div class="lg:col-span-7 xl:col-span-8 bg-white/[0.02] border border-white/10 rounded-2xl flex flex-col overflow-hidden backdrop-blur-md relative">
+                    <div
+                        class="lg:col-span-7 xl:col-span-8 bg-white/[0.02] border border-white/10 rounded-2xl flex flex-col overflow-hidden backdrop-blur-md relative">
                         <div class="flex border-b border-white/10 px-2 sm:px-6 bg-black/40 overflow-x-auto">
-                            <button id="editorTabCaptions" data-editor-tab="captions" class="editor-tab-btn px-4 py-4 text-sm font-medium text-accent border-b-2 border-accent flex items-center gap-2 whitespace-nowrap">
-                                <iconify-icon icon="solar:text-field-linear" width="18" height="18"></iconify-icon> <span class="hidden sm:inline">Captions</span>
+                            <button id="editorTabCaptions" data-editor-tab="captions"
+                                class="editor-tab-btn px-4 py-4 text-sm font-medium text-accent border-b-2 border-accent flex items-center gap-2 whitespace-nowrap">
+                                <iconify-icon icon="solar:text-field-linear" width="18" height="18"></iconify-icon>
+                                <span class="hidden sm:inline">Captions</span>
                             </button>
-                            <button id="editorTabAudio" data-editor-tab="audio" class="editor-tab-btn px-4 py-4 text-sm font-medium text-white/50 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
-                                <iconify-icon icon="solar:music-note-2-linear" width="18" height="18"></iconify-icon> <span class="hidden sm:inline">Audio</span>
+                            <button id="editorTabAudio" data-editor-tab="audio"
+                                class="editor-tab-btn px-4 py-4 text-sm font-medium text-white/50 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
+                                <iconify-icon icon="solar:music-note-2-linear" width="18" height="18"></iconify-icon>
+                                <span class="hidden sm:inline">Audio</span>
                             </button>
-                            <button id="editorTabStyles" data-editor-tab="styles" class="editor-tab-btn px-4 py-4 text-sm font-medium text-white/50 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
-                                <iconify-icon icon="solar:pallete-2-linear" width="18" height="18"></iconify-icon> <span class="hidden sm:inline">Styles</span>
+                            <button id="editorTabStyles" data-editor-tab="styles"
+                                class="editor-tab-btn px-4 py-4 text-sm font-medium text-white/50 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
+                                <iconify-icon icon="solar:pallete-2-linear" width="18" height="18"></iconify-icon> <span
+                                    class="hidden sm:inline">Styles</span>
                             </button>
-                            <button id="editorTabComplement" data-editor-tab="complement" class="editor-tab-btn px-4 py-4 text-sm font-medium text-white/50 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
-                                <iconify-icon icon="solar:gallery-add-linear" width="18" height="18"></iconify-icon> <span class="hidden sm:inline">Complementar Vídeo</span>
+                            <button id="editorTabComplement" data-editor-tab="complement"
+                                class="editor-tab-btn px-4 py-4 text-sm font-medium text-white/50 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap">
+                                <iconify-icon icon="solar:gallery-add-linear" width="18" height="18"></iconify-icon>
+                                <span class="hidden sm:inline">Complementar Vídeo</span>
                             </button>
                         </div>
 
@@ -767,117 +1026,172 @@
                                         <label class="flex items-center gap-2 cursor-pointer group">
                                             <div class="relative flex items-center">
                                                 <input type="checkbox" class="sr-only peer" checked="">
-                                                <div class="w-9 h-5 bg-black border border-white/20 rounded-full peer peer-checked:bg-accent/20 peer-checked:border-accent/50 transition-all"></div>
-                                                <div class="absolute left-1 w-3 h-3 bg-white rounded-full transition-all peer-checked:translate-x-4 peer-checked:bg-accent shadow-sm"></div>
+                                                <div
+                                                    class="w-9 h-5 bg-black border border-white/20 rounded-full peer peer-checked:bg-accent/20 peer-checked:border-accent/50 transition-all">
+                                                </div>
+                                                <div
+                                                    class="absolute left-1 w-3 h-3 bg-white rounded-full transition-all peer-checked:translate-x-4 peer-checked:bg-accent shadow-sm">
+                                                </div>
                                             </div>
-                                            <span class="text-xs text-white/70 font-medium group-hover:text-white transition-colors">Auto-Emoji</span>
+                                            <span
+                                                class="text-xs text-white/70 font-medium group-hover:text-white transition-colors">Auto-Emoji</span>
                                         </label>
                                         <div class="h-4 w-[1px] bg-white/10"></div>
                                         <label class="flex items-center gap-2 cursor-pointer group">
                                             <div class="relative flex items-center">
                                                 <input type="checkbox" class="sr-only peer" checked="">
-                                                <div class="w-9 h-5 bg-black border border-white/20 rounded-full peer peer-checked:bg-accent/20 peer-checked:border-accent/50 transition-all"></div>
-                                                <div class="absolute left-1 w-3 h-3 bg-white rounded-full transition-all peer-checked:translate-x-4 peer-checked:bg-accent shadow-sm"></div>
+                                                <div
+                                                    class="w-9 h-5 bg-black border border-white/20 rounded-full peer peer-checked:bg-accent/20 peer-checked:border-accent/50 transition-all">
+                                                </div>
+                                                <div
+                                                    class="absolute left-1 w-3 h-3 bg-white rounded-full transition-all peer-checked:translate-x-4 peer-checked:bg-accent shadow-sm">
+                                                </div>
                                             </div>
-                                            <span class="text-xs text-white/70 font-medium group-hover:text-white transition-colors">B-Roll</span>
+                                            <span
+                                                class="text-xs text-white/70 font-medium group-hover:text-white transition-colors">B-Roll</span>
                                         </label>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <button id="transcribeCaptionsBtn" class="text-xs text-accent border border-accent/30 hover:bg-accent hover:text-bg px-3 py-1.5 rounded transition-colors flex items-center gap-1 font-medium">
+                                        <button id="transcribeCaptionsBtn"
+                                            class="text-xs text-accent border border-accent/30 hover:bg-accent hover:text-bg px-3 py-1.5 rounded transition-colors flex items-center gap-1 font-medium">
                                             <iconify-icon icon="solar:document-text-linear"></iconify-icon> Reajustar
                                         </button>
-                                        <button class="text-xs text-accent border border-accent/30 hover:bg-accent hover:text-bg px-3 py-1.5 rounded transition-colors flex items-center gap-1 font-medium">
+                                        <button
+                                            class="text-xs text-accent border border-accent/30 hover:bg-accent hover:text-bg px-3 py-1.5 rounded transition-colors flex items-center gap-1 font-medium">
                                             <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> AI Polish
                                         </button>
                                     </div>
                                 </div>
                                 <div class="px-4 py-2 border-b border-white/5 bg-black/30">
                                     <p id="transcribeStatus" class="text-xs text-white/50 min-h-[1rem]">
-                                        Envie um link para transcrição automática. Use Reajustar para atualizar cortes e legendas.
+                                        Envie um link para transcrição automática. Use Reajustar para atualizar cortes e
+                                        legendas.
                                     </p>
                                 </div>
                                 <div class="px-4 py-2 border-b border-white/5 bg-black/20">
                                     <details>
-                                        <summary class="text-[11px] text-white/55 cursor-pointer hover:text-white transition-colors">YouTube cookies (opcional para vídeos com bot-check)</summary>
+                                        <summary
+                                            class="text-[11px] text-white/55 cursor-pointer hover:text-white transition-colors">
+                                            YouTube cookies (opcional para vídeos com bot-check)</summary>
                                         <div class="mt-2 space-y-2">
-                                            <textarea id="youtubeCookiesInput" rows="3" placeholder="Cole cookies do YouTube (Netscape cookies.txt, JSON exportado ou header Cookie)." class="w-full bg-black/60 border border-white/15 rounded-lg px-2 py-2 text-white/80 text-[11px] font-mono outline-none focus:border-accent/50"></textarea>
+                                            <textarea id="youtubeCookiesInput" rows="3"
+                                                placeholder="Cole cookies do YouTube (Netscape cookies.txt, JSON exportado ou header Cookie)."
+                                                class="w-full bg-black/60 border border-white/15 rounded-lg px-2 py-2 text-white/80 text-[11px] font-mono outline-none focus:border-accent/50"></textarea>
                                             <div class="flex items-center gap-2">
-                                                <button id="saveYoutubeCookiesBtn" class="text-[11px] px-2.5 py-1.5 rounded border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Salvar local</button>
-                                                <button id="clearYoutubeCookiesBtn" class="text-[11px] px-2.5 py-1.5 rounded border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors">Limpar</button>
-                                                <span id="youtubeCookiesStatus" class="text-[11px] text-white/40">Salvo apenas neste navegador.</span>
+                                                <button id="saveYoutubeCookiesBtn"
+                                                    class="text-[11px] px-2.5 py-1.5 rounded border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Salvar
+                                                    local</button>
+                                                <button id="clearYoutubeCookiesBtn"
+                                                    class="text-[11px] px-2.5 py-1.5 rounded border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors">Limpar</button>
+                                                <span id="youtubeCookiesStatus" class="text-[11px] text-white/40">Salvo
+                                                    apenas neste navegador.</span>
                                             </div>
                                         </div>
                                     </details>
                                 </div>
 
                                 <div class="p-4 overflow-y-auto space-y-3 custom-scrollbar flex-grow" id="captionList">
-                                    <div class="flex gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-text">
+                                    <div
+                                        class="flex gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-text">
                                         <div class="text-xs text-white/40 font-mono mt-2 w-10 text-right">0:21</div>
                                         <div class="flex-grow">
-                                            <textarea class="w-full bg-transparent text-white/60 text-sm resize-none outline-none font-medium leading-relaxed" rows="2">Because standard monitors</textarea>
+                                            <textarea
+                                                class="w-full bg-transparent text-white/60 text-sm resize-none outline-none font-medium leading-relaxed"
+                                                rows="2">Because standard monitors</textarea>
                                         </div>
                                     </div>
-                                    
-                                    <div class="flex gap-3 p-3 rounded-xl border border-accent/40 bg-accent/[0.05] group relative overflow-hidden shadow-[0_0_15px_rgba(200,255,0,0.05)] cursor-text">
-                                        <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_8px_rgba(200,255,0,0.8)]"></div>
+
+                                    <div
+                                        class="flex gap-3 p-3 rounded-xl border border-accent/40 bg-accent/[0.05] group relative overflow-hidden shadow-[0_0_15px_rgba(200,255,0,0.05)] cursor-text">
+                                        <div
+                                            class="absolute left-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_8px_rgba(200,255,0,0.8)]">
+                                        </div>
                                         <div class="text-xs text-accent font-mono mt-2 w-10 text-right">0:24</div>
                                         <div class="flex-grow">
-                                            <textarea class="w-full bg-transparent text-white text-sm resize-none outline-none font-medium leading-relaxed selection:bg-accent/30" rows="2">are severely limiting our spatial computing</textarea>
-                                            <div class="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 opacity-100 transition-opacity">
-                                                <button class="text-xs text-white/50 hover:text-white flex items-center gap-1"><iconify-icon icon="solar:text-bold"></iconify-icon> Highlight</button>
-                                                <button class="text-xs text-white/50 hover:text-white flex items-center gap-1"><iconify-icon icon="solar:gallery-bold"></iconify-icon> Add B-Roll</button>
+                                            <textarea
+                                                class="w-full bg-transparent text-white text-sm resize-none outline-none font-medium leading-relaxed selection:bg-accent/30"
+                                                rows="2">are severely limiting our spatial computing</textarea>
+                                            <div
+                                                class="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 opacity-100 transition-opacity">
+                                                <button
+                                                    class="text-xs text-white/50 hover:text-white flex items-center gap-1"><iconify-icon
+                                                        icon="solar:text-bold"></iconify-icon> Highlight</button>
+                                                <button
+                                                    class="text-xs text-white/50 hover:text-white flex items-center gap-1"><iconify-icon
+                                                        icon="solar:gallery-bold"></iconify-icon> Add B-Roll</button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="flex gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-text">
+                                    <div
+                                        class="flex gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors group cursor-text">
                                         <div class="text-xs text-white/40 font-mono mt-2 w-10 text-right">0:28</div>
                                         <div class="flex-grow">
-                                            <textarea class="w-full bg-transparent text-white/60 text-sm resize-none outline-none font-medium leading-relaxed" rows="2">potential in the near future. 🚀</textarea>
+                                            <textarea
+                                                class="w-full bg-transparent text-white/60 text-sm resize-none outline-none font-medium leading-relaxed"
+                                                rows="2">potential in the near future. 🚀</textarea>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="w-full xl:w-1/3 bg-black/20 flex flex-col h-full border-t xl:border-t-0 border-white/5 overflow-y-auto custom-scrollbar">
+                            <div
+                                class="w-full xl:w-1/3 bg-black/20 flex flex-col h-full border-t xl:border-t-0 border-white/5 overflow-y-auto custom-scrollbar">
                                 <div id="complementPanel" class="hidden p-4 border-b border-white/5">
-                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Complementar Vídeo (AI Fill)</h4>
+                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">
+                                        Complementar Vídeo (AI Fill)</h4>
                                     <div class="grid grid-cols-1 gap-2 mb-2">
                                         <label class="text-[11px] text-white/60 space-y-1">
                                             Provider
-                                            <select id="complementProviderSelect" class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
+                                            <select id="complementProviderSelect"
+                                                class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
                                                 <option value="openai">OpenAI Images</option>
                                             </select>
                                         </label>
                                         <label class="text-[11px] text-white/60 space-y-1">
                                             API Key (salva localmente)
-                                            <input id="complementApiKeyInput" type="password" placeholder="sk-..." class="w-full bg-black/60 border border-white/15 rounded px-3 py-2 text-white text-xs outline-none focus:border-accent/50">
+                                            <input id="complementApiKeyInput" type="password" placeholder="sk-..."
+                                                class="w-full bg-black/60 border border-white/15 rounded px-3 py-2 text-white text-xs outline-none focus:border-accent/50">
                                         </label>
                                         <div class="flex gap-2">
-                                            <button id="complementSaveKeyBtn" class="flex-1 text-xs px-2 py-2 rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Salvar Key</button>
-                                            <button id="complementClearKeyBtn" class="text-xs px-2 py-2 rounded-lg border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors">Limpar</button>
+                                            <button id="complementSaveKeyBtn"
+                                                class="flex-1 text-xs px-2 py-2 rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Salvar
+                                                Key</button>
+                                            <button id="complementClearKeyBtn"
+                                                class="text-xs px-2 py-2 rounded-lg border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors">Limpar</button>
                                         </div>
-                                        <p id="complementStatus" class="text-[11px] text-white/40 min-h-[1rem]">Defina a key e peça para gerar imagens de preenchimento.</p>
+                                        <p id="complementStatus" class="text-[11px] text-white/40 min-h-[1rem]">Defina a
+                                            key e peça para gerar imagens de preenchimento.</p>
                                     </div>
 
-                                    <div id="complementChatLog" class="h-24 overflow-y-auto custom-scrollbar rounded-lg border border-white/10 bg-black/30 p-3 space-y-2 text-xs mb-2"></div>
-                                    <div class="flex gap-2 mb-2">
-                                        <input id="complementChatInput" type="text" placeholder="Ex: gerar imagem cinematográfica da fala atual" class="flex-grow bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-accent/50">
-                                        <button id="complementChatSendBtn" class="px-3 py-2 text-xs rounded-lg bg-accent text-bg font-medium hover:brightness-110 transition-all">Send</button>
+                                    <div id="complementChatLog"
+                                        class="h-24 overflow-y-auto custom-scrollbar rounded-lg border border-white/10 bg-black/30 p-3 space-y-2 text-xs mb-2">
                                     </div>
                                     <div class="flex gap-2 mb-2">
-                                        <button id="complementAutoFillBtn" class="flex-1 text-xs px-2 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-accent/40 hover:text-accent transition-colors">Gerar para gaps</button>
-                                        <button id="complementRegenerateBtn" class="text-xs px-2 py-2 rounded-lg border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors">Regenerar</button>
+                                        <input id="complementChatInput" type="text"
+                                            placeholder="Ex: gerar imagem cinematográfica da fala atual"
+                                            class="flex-grow bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-accent/50">
+                                        <button id="complementChatSendBtn"
+                                            class="px-3 py-2 text-xs rounded-lg bg-accent text-bg font-medium hover:brightness-110 transition-all">Send</button>
+                                    </div>
+                                    <div class="flex gap-2 mb-2">
+                                        <button id="complementAutoFillBtn"
+                                            class="flex-1 text-xs px-2 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-accent/40 hover:text-accent transition-colors">Gerar
+                                            para gaps</button>
+                                        <button id="complementRegenerateBtn"
+                                            class="text-xs px-2 py-2 rounded-lg border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors">Regenerar</button>
                                     </div>
                                     <div id="complementImageList" class="space-y-2 text-xs text-white/70"></div>
                                 </div>
 
                                 <div id="captionStyleSection" class="editor-main-panel p-4 border-b border-white/5">
-                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-4">Caption Style</h4>
+                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-4">
+                                        Caption Style</h4>
                                     <div class="grid grid-cols-2 gap-2 mb-3">
                                         <label class="text-[11px] text-white/70 space-y-1">
                                             Font
-                                            <select id="captionFontFamilySelect" class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
+                                            <select id="captionFontFamilySelect"
+                                                class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
                                                 <option value="body">Space Grotesk</option>
                                                 <option value="display">Syne</option>
                                                 <option value="mono">JetBrains Mono</option>
@@ -885,7 +1199,8 @@
                                         </label>
                                         <label class="text-[11px] text-white/70 space-y-1">
                                             Weight
-                                            <select id="captionWeightSelect" class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
+                                            <select id="captionWeightSelect"
+                                                class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
                                                 <option value="500">Medium</option>
                                                 <option value="700" selected="">Bold</option>
                                                 <option value="900">Black</option>
@@ -895,31 +1210,40 @@
                                     <div class="grid grid-cols-2 gap-2 mb-3">
                                         <label class="text-[11px] text-white/70 space-y-1">
                                             Text
-                                            <input id="captionTextColorInput" type="color" value="#ffffff" class="w-full h-8 bg-transparent border border-white/15 rounded p-1">
+                                            <input id="captionTextColorInput" type="color" value="#ffffff"
+                                                class="w-full h-8 bg-transparent border border-white/15 rounded p-1">
                                         </label>
                                         <label class="text-[11px] text-white/70 space-y-1">
                                             BG
-                                            <input id="captionBgColorInput" type="color" value="#000000" class="w-full h-8 bg-transparent border border-white/15 rounded p-1">
+                                            <input id="captionBgColorInput" type="color" value="#000000"
+                                                class="w-full h-8 bg-transparent border border-white/15 rounded p-1">
                                         </label>
                                     </div>
                                     <div class="space-y-2 mb-3">
-                                        <label class="text-[11px] text-white/70 flex items-center justify-between gap-2">
+                                        <label
+                                            class="text-[11px] text-white/70 flex items-center justify-between gap-2">
                                             Size
                                             <span id="captionSizeValue" class="text-white/40">38px</span>
                                         </label>
-                                        <input id="captionFontSizeInput" type="range" min="20" max="72" value="38" class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none" style="background: linear-gradient(to right, #c8ff00 34%, rgba(255,255,255,0.1) 34%);">
+                                        <input id="captionFontSizeInput" type="range" min="20" max="72" value="38"
+                                            class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none"
+                                            style="background: linear-gradient(to right, #c8ff00 34%, rgba(255,255,255,0.1) 34%);">
                                     </div>
                                     <div class="space-y-2 mb-3">
-                                        <label class="text-[11px] text-white/70 flex items-center justify-between gap-2">
+                                        <label
+                                            class="text-[11px] text-white/70 flex items-center justify-between gap-2">
                                             BG Opacity
                                             <span id="captionBgOpacityValue" class="text-white/40">52%</span>
                                         </label>
-                                        <input id="captionBgOpacityInput" type="range" min="0" max="100" value="52" class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none" style="background: linear-gradient(to right, #c8ff00 52%, rgba(255,255,255,0.1) 52%);">
+                                        <input id="captionBgOpacityInput" type="range" min="0" max="100" value="52"
+                                            class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none"
+                                            style="background: linear-gradient(to right, #c8ff00 52%, rgba(255,255,255,0.1) 52%);">
                                     </div>
                                     <div class="grid grid-cols-2 gap-2 mb-3">
                                         <label class="text-[11px] text-white/70 space-y-1">
                                             Position
-                                            <select id="captionPositionSelect" class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
+                                            <select id="captionPositionSelect"
+                                                class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
                                                 <option value="top">Top</option>
                                                 <option value="middle">Middle</option>
                                                 <option value="bottom" selected="">Bottom</option>
@@ -927,7 +1251,8 @@
                                         </label>
                                         <label class="text-[11px] text-white/70 space-y-1">
                                             Case
-                                            <select id="captionCaseSelect" class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
+                                            <select id="captionCaseSelect"
+                                                class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
                                                 <option value="normal" selected="">Normal</option>
                                                 <option value="uppercase">UPPER</option>
                                                 <option value="lowercase">lower</option>
@@ -937,66 +1262,98 @@
                                     <div class="grid grid-cols-2 gap-2">
                                         <label class="text-[11px] text-white/70 space-y-1">
                                             Stroke Color
-                                            <input id="captionStrokeColorInput" type="color" value="#000000" class="w-full h-8 bg-transparent border border-white/15 rounded p-1">
+                                            <input id="captionStrokeColorInput" type="color" value="#000000"
+                                                class="w-full h-8 bg-transparent border border-white/15 rounded p-1">
                                         </label>
                                         <label class="text-[11px] text-white/70 space-y-1">
                                             Stroke
-                                            <input id="captionStrokeSizeInput" type="number" min="0" max="8" value="2" class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
+                                            <input id="captionStrokeSizeInput" type="number" min="0" max="8" value="2"
+                                                class="w-full bg-black/60 border border-white/15 rounded px-2 py-1.5 text-white text-xs">
                                         </label>
                                     </div>
                                 </div>
 
                                 <div id="audioMixSection" class="editor-main-panel p-4 border-b border-white/5">
-                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-4">Audio Mix</h4>
+                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-4">Audio
+                                        Mix</h4>
                                     <div class="bg-white/[0.02] border border-white/5 rounded-xl p-3 mb-3">
                                         <div class="flex items-center justify-between mb-2">
                                             <span class="text-xs text-white/80">Background Music</span>
                                             <span class="text-xs text-white/40" id="musicVolumeLabel">15%</span>
                                         </div>
-                                        <input id="musicVolumeInput" type="range" min="0" max="100" value="15" class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none" style="background: linear-gradient(to right, #c8ff00 15%, rgba(255,255,255,0.1) 15%);">
+                                        <input id="musicVolumeInput" type="range" min="0" max="100" value="15"
+                                            class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none"
+                                            style="background: linear-gradient(to right, #c8ff00 15%, rgba(255,255,255,0.1) 15%);">
                                     </div>
                                     <div class="bg-white/[0.02] border border-white/5 rounded-xl p-3">
                                         <div class="flex items-center justify-between mb-2">
                                             <span class="text-xs text-white/80">Voice Volume</span>
                                             <span class="text-xs text-white/40" id="voiceVolumeLabel">100%</span>
                                         </div>
-                                        <input id="voiceVolumeInput" type="range" min="0" max="100" value="100" data-color="#ffffff" class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none" style="background: linear-gradient(to right, #fff 100%, rgba(255,255,255,0.1) 100%);">
+                                        <input id="voiceVolumeInput" type="range" min="0" max="100" value="100"
+                                            data-color="#ffffff"
+                                            class="custom-range w-full h-1 bg-white/10 rounded-full appearance-none outline-none"
+                                            style="background: linear-gradient(to right, #fff 100%, rgba(255,255,255,0.1) 100%);">
                                     </div>
                                 </div>
 
                                 <div id="spaceHubSection" class="editor-main-panel p-4 border-b border-white/5">
-                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Space Hub</h4>
+                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Space
+                                        Hub</h4>
                                     <div class="flex gap-2 mb-2">
-                                        <input id="spaceNameInput" type="text" placeholder="Nome do Automar Space" class="flex-grow bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-accent/50">
-                                        <button id="connectSpaceBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Open Space</button>
+                                        <input id="spaceNameInput" type="text" placeholder="Nome do Automar Space"
+                                            class="flex-grow bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-accent/50">
+                                        <button id="connectSpaceBtn"
+                                            class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Open
+                                            Space</button>
                                     </div>
-                                    <p id="spaceStatus" class="text-xs text-white/50 min-h-[1rem] mb-3">Space desconectado.</p>
-                                    <p class="text-[11px] text-white/40 mb-3">Abre um workspace visual para automações de vídeo (cuts, legendas, thumb, pack).</p>
+                                    <p id="spaceStatus" class="text-xs text-white/50 min-h-[1rem] mb-3">Space
+                                        desconectado.</p>
+                                    <p class="text-[11px] text-white/40 mb-3">Abre um workspace visual para automações
+                                        de vídeo (cuts, legendas, thumb, pack).</p>
                                     <div class="grid grid-cols-2 gap-2">
-                                        <button id="generateThumbBtn" class="text-xs px-2 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-accent/40 hover:text-accent transition-colors">Generate Thumb</button>
-                                        <button id="generateTitlesBtn" class="text-xs px-2 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-accent/40 hover:text-accent transition-colors">Generate Titles</button>
-                                        <button id="generateHashtagsBtn" class="text-xs px-2 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-accent/40 hover:text-accent transition-colors">Hashtags</button>
-                                        <button id="downloadPackBtn" class="text-xs px-2 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Download Pack</button>
+                                        <button id="generateThumbBtn"
+                                            class="text-xs px-2 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-accent/40 hover:text-accent transition-colors">Generate
+                                            Thumb</button>
+                                        <button id="generateTitlesBtn"
+                                            class="text-xs px-2 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-accent/40 hover:text-accent transition-colors">Generate
+                                            Titles</button>
+                                        <button id="generateHashtagsBtn"
+                                            class="text-xs px-2 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-accent/40 hover:text-accent transition-colors">Hashtags</button>
+                                        <button id="downloadPackBtn"
+                                            class="text-xs px-2 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Download
+                                            Pack</button>
                                     </div>
                                     <div id="spaceOutputs" class="mt-3 space-y-2 text-xs text-white/70"></div>
                                 </div>
 
                                 <div id="commandChatSection" class="editor-main-panel p-4">
-                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Command Chat + Voice</h4>
+                                    <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">
+                                        Command Chat + Voice</h4>
                                     <div class="flex items-center justify-between gap-2 mb-2">
-                                        <span id="agentIdBadge" class="text-[11px] text-white/50 truncate">Agent: pending...</span>
-                                        <button id="agentConnectBtn" class="text-[11px] px-2 py-1 rounded border border-white/15 hover:border-accent/40 hover:text-accent transition-colors">
+                                        <span id="agentIdBadge" class="text-[11px] text-white/50 truncate">Agent:
+                                            pending...</span>
+                                        <button id="agentConnectBtn"
+                                            class="text-[11px] px-2 py-1 rounded border border-white/15 hover:border-accent/40 hover:text-accent transition-colors">
                                             Connect Agent
                                         </button>
                                     </div>
                                     <p id="agentStatus" class="text-[11px] text-white/40 mb-2">Agent: disconnected</p>
-                                    <div id="commandChatLog" class="h-36 overflow-y-auto custom-scrollbar rounded-lg border border-white/10 bg-black/30 p-3 space-y-2 text-xs"></div>
+                                    <div id="commandChatLog"
+                                        class="h-36 overflow-y-auto custom-scrollbar rounded-lg border border-white/10 bg-black/30 p-3 space-y-2 text-xs">
+                                    </div>
                                     <div class="mt-2 flex gap-2">
-                                        <input id="commandInput" type="text" placeholder="Ex: uppercase captions, trim end -2, abrir automar, timeline, crop zoom 120, add text CTA..." class="flex-grow bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-accent/50">
-                                        <button id="commandMicBtn" class="w-10 h-10 rounded-lg border border-white/15 hover:border-accent/40 text-white/80 hover:text-accent transition-colors" title="Voice command">
-                                            <iconify-icon icon="solar:microphone-3-linear" width="18" height="18"></iconify-icon>
+                                        <input id="commandInput" type="text"
+                                            placeholder="Ex: uppercase captions, trim end -2, abrir automar, timeline, crop zoom 120, add text CTA..."
+                                            class="flex-grow bg-black/60 border border-white/15 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-accent/50">
+                                        <button id="commandMicBtn"
+                                            class="w-10 h-10 rounded-lg border border-white/15 hover:border-accent/40 text-white/80 hover:text-accent transition-colors"
+                                            title="Voice command">
+                                            <iconify-icon icon="solar:microphone-3-linear" width="18"
+                                                height="18"></iconify-icon>
                                         </button>
-                                        <button id="commandSendBtn" class="px-3 py-2 text-xs rounded-lg bg-accent text-bg font-medium hover:brightness-110 transition-all">Run</button>
+                                        <button id="commandSendBtn"
+                                            class="px-3 py-2 text-xs rounded-lg bg-accent text-bg font-medium hover:brightness-110 transition-all">Run</button>
                                     </div>
                                     <p id="voiceStatus" class="text-[11px] text-white/40 mt-2">Voice: idle</p>
                                 </div>
@@ -1007,35 +1364,65 @@
                 <div class="mt-6 bg-white/[0.02] border border-white/10 rounded-xl p-4">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                         <h4 class="text-xs font-semibold text-white/40 uppercase tracking-widest">Comandos Rápidos</h4>
-                        <span class="text-[11px] text-white/40">Dica: digite `ajuda` no chat para orientação dinâmica.</span>
+                        <span class="text-[11px] text-white/40">Dica: digite `ajuda` no chat para orientação
+                            dinâmica.</span>
                     </div>
                     <p class="text-xs text-white/60 mb-3">
                         Exemplos: "uppercase captions", "caption size 52", "caption color #c8ff00", "position top",
-                        "trim end -3", "music 20", "voice 85", "conectar space campanha-q2", "abrir automar", "timeline",
-                        "complementar", "gerar gaps", "fill: cena noturna com chuva", "crop zoom 120", "add text: call to action", "gerar thumb",
-                        "gerar títulos", "gerar hashtags", "transcrever", "connect agent", "agent id: agent_xxx", "download pack".
+                        "trim end -3", "music 20", "voice 85", "conectar space campanha-q2", "abrir automar",
+                        "timeline",
+                        "complementar", "gerar gaps", "fill: cena noturna com chuva", "crop zoom 120", "add text: call
+                        to action", "gerar thumb",
+                        "gerar títulos", "gerar hashtags", "transcrever", "connect agent", "agent id: agent_xxx",
+                        "download pack".
                     </p>
                     <div id="commandShortcutBar" class="flex flex-wrap gap-2">
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="help">ajuda</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="clip 1">clip 1</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="transcrever">transcrever</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="uppercase captions">uppercase</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="caption size 48">caption 48px</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="position top">posição top</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="abrir automar">automar</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="timeline">timeline</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="complementar">complementar</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="gerar gaps">gaps</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="gerar thumb">thumb</button>
-                        <button type="button" class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors" data-command="download pack">download pack</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="help">ajuda</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="clip 1">clip 1</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="transcrever">transcrever</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="uppercase captions">uppercase</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="caption size 48">caption 48px</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="position top">posição top</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="abrir automar">automar</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="timeline">timeline</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="complementar">complementar</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="gerar gaps">gaps</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="gerar thumb">thumb</button>
+                        <button type="button"
+                            class="command-shortcut text-[11px] px-2.5 py-1.5 rounded-lg border border-white/15 text-white/70 hover:border-accent/40 hover:text-accent transition-colors"
+                            data-command="download pack">download pack</button>
                     </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <div id="videoAutomationModal" class="hidden fixed inset-0 z-[220] items-center justify-center p-2 sm:p-5 bg-black/85 backdrop-blur-md">
-        <div class="w-full max-w-[1520px] h-[94vh] rounded-2xl border border-white/10 bg-[#07090d] shadow-2xl overflow-hidden flex flex-col">
+    <div id="videoAutomationModal"
+        class="hidden fixed inset-0 z-[220] items-center justify-center p-2 sm:p-5 bg-black/85 backdrop-blur-md">
+        <div
+            class="w-full max-w-[1520px] h-[94vh] rounded-2xl border border-white/10 bg-[#07090d] shadow-2xl overflow-hidden flex flex-col">
             <div class="px-4 sm:px-6 py-3 border-b border-white/10 bg-black/40 flex items-center justify-between">
                 <div class="flex items-center gap-2 text-xs text-white/50">
                     <iconify-icon icon="solar:layers-linear" width="16" height="16"></iconify-icon>
@@ -1044,9 +1431,13 @@
                     <span id="automationSpaceTitle" class="text-white font-medium">Automar Video Space</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="automationRunBtn" class="px-3 py-1.5 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Test run</button>
-                    <button id="automationDeployBtn" class="px-3 py-1.5 text-xs rounded-lg bg-accent text-bg font-semibold hover:brightness-110 transition-all">Deploy</button>
-                    <button id="videoAutomationCloseBtn" class="w-8 h-8 rounded-lg border border-white/15 text-white/70 hover:text-white hover:border-white/30 transition-colors">
+                    <button id="automationRunBtn"
+                        class="px-3 py-1.5 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Test
+                        run</button>
+                    <button id="automationDeployBtn"
+                        class="px-3 py-1.5 text-xs rounded-lg bg-accent text-bg font-semibold hover:brightness-110 transition-all">Deploy</button>
+                    <button id="videoAutomationCloseBtn"
+                        class="w-8 h-8 rounded-lg border border-white/15 text-white/70 hover:text-white hover:border-white/30 transition-colors">
                         <iconify-icon icon="solar:close-circle-linear" width="18" height="18"></iconify-icon>
                     </button>
                 </div>
@@ -1059,13 +1450,18 @@
                         Automar
                     </div>
                     <div class="relative">
-                        <input type="text" readonly value="video workflows" class="w-full text-xs bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white/60">
+                        <input type="text" readonly value="video workflows"
+                            class="w-full text-xs bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white/60">
                     </div>
                     <div class="space-y-2 text-sm">
-                        <button class="w-full text-left px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90">Overview</button>
-                        <button class="w-full text-left px-3 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent">Workflows</button>
-                        <button class="w-full text-left px-3 py-2 rounded-lg bg-white/[0.02] border border-white/10 text-white/70">Integrations</button>
-                        <button class="w-full text-left px-3 py-2 rounded-lg bg-white/[0.02] border border-white/10 text-white/70">Settings</button>
+                        <button
+                            class="w-full text-left px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90">Overview</button>
+                        <button
+                            class="w-full text-left px-3 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent">Workflows</button>
+                        <button
+                            class="w-full text-left px-3 py-2 rounded-lg bg-white/[0.02] border border-white/10 text-white/70">Integrations</button>
+                        <button
+                            class="w-full text-left px-3 py-2 rounded-lg bg-white/[0.02] border border-white/10 text-white/70">Settings</button>
                     </div>
                     <div class="mt-auto text-[11px] text-white/40">
                         <p>Conectado ao Space:</p>
@@ -1074,48 +1470,60 @@
                 </aside>
 
                 <section class="lg:col-span-7 p-4 sm:p-6 border-r border-white/10 relative overflow-auto">
-                    <div class="relative h-full min-h-[520px] rounded-xl border border-white/10 bg-[radial-gradient(circle_at_25%_15%,rgba(200,255,0,0.08),transparent_38%),radial-gradient(circle_at_85%_85%,rgba(29,78,216,0.16),transparent_42%),linear-gradient(to_bottom,#05070b,#020306)] overflow-hidden">
-                        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 640" preserveAspectRatio="none">
+                    <div
+                        class="relative h-full min-h-[520px] rounded-xl border border-white/10 bg-[radial-gradient(circle_at_25%_15%,rgba(200,255,0,0.08),transparent_38%),radial-gradient(circle_at_85%_85%,rgba(29,78,216,0.16),transparent_42%),linear-gradient(to_bottom,#05070b,#020306)] overflow-hidden">
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 640"
+                            preserveAspectRatio="none">
                             <defs>
                                 <linearGradient id="automarFlowLine" x1="0" x2="1">
                                     <stop offset="0%" stop-color="#4f596b" stop-opacity="0.45"></stop>
                                     <stop offset="100%" stop-color="#c8ff00" stop-opacity="0.9"></stop>
                                 </linearGradient>
                             </defs>
-                            <path d="M180 320 C300 320, 330 190, 460 190" stroke="url(#automarFlowLine)" stroke-width="3" fill="none"></path>
-                            <path d="M180 320 C300 320, 330 440, 460 440" stroke="url(#automarFlowLine)" stroke-width="3" fill="none"></path>
-                            <path d="M555 190 C680 190, 700 315, 790 315" stroke="url(#automarFlowLine)" stroke-width="3" fill="none"></path>
-                            <path d="M555 440 C680 440, 700 325, 790 325" stroke="url(#automarFlowLine)" stroke-width="3" fill="none"></path>
+                            <path d="M180 320 C300 320, 330 190, 460 190" stroke="url(#automarFlowLine)"
+                                stroke-width="3" fill="none"></path>
+                            <path d="M180 320 C300 320, 330 440, 460 440" stroke="url(#automarFlowLine)"
+                                stroke-width="3" fill="none"></path>
+                            <path d="M555 190 C680 190, 700 315, 790 315" stroke="url(#automarFlowLine)"
+                                stroke-width="3" fill="none"></path>
+                            <path d="M555 440 C680 440, 700 325, 790 325" stroke="url(#automarFlowLine)"
+                                stroke-width="3" fill="none"></path>
                         </svg>
 
-                        <button type="button" data-automar-node="trigger_new_video" class="automar-node absolute left-[6%] top-[40%] w-[200px] rounded-xl border border-accent/30 bg-black/70 px-4 py-3 text-left shadow-[0_0_18px_rgba(200,255,0,0.12)]">
+                        <button type="button" data-automar-node="trigger_new_video"
+                            class="automar-node absolute left-[6%] top-[40%] w-[200px] rounded-xl border border-accent/30 bg-black/70 px-4 py-3 text-left shadow-[0_0_18px_rgba(200,255,0,0.12)]">
                             <div class="text-[10px] uppercase tracking-widest text-accent">Trigger</div>
                             <div class="automar-node-title text-base text-white mt-1">New video ingested</div>
                             <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Source: clip library</div>
                         </button>
 
-                        <button type="button" data-automar-node="action_detect_cuts" class="automar-node absolute left-[44%] top-[17%] w-[220px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
+                        <button type="button" data-automar-node="action_detect_cuts"
+                            class="automar-node absolute left-[44%] top-[17%] w-[220px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
                             <div class="text-[10px] uppercase tracking-widest text-white/60">Action</div>
                             <div class="automar-node-title text-base text-white mt-1">Detect best cuts</div>
                             <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Score + timing map</div>
                         </button>
 
-                        <button type="button" data-automar-node="action_captions" class="automar-node absolute left-[44%] top-[58%] w-[220px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
+                        <button type="button" data-automar-node="action_captions"
+                            class="automar-node absolute left-[44%] top-[58%] w-[220px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
                             <div class="text-[10px] uppercase tracking-widest text-white/60">Action</div>
                             <div class="automar-node-title text-base text-white mt-1">Generate captions</div>
                             <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Model: scribe_v1</div>
                         </button>
 
-                        <button type="button" data-automar-node="logic_review_wait" class="automar-node absolute left-[76%] top-[36%] w-[180px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
+                        <button type="button" data-automar-node="logic_review_wait"
+                            class="automar-node absolute left-[76%] top-[36%] w-[180px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
                             <div class="text-[10px] uppercase tracking-widest text-white/60">Logic</div>
                             <div class="automar-node-title text-base text-white mt-1">Wait review</div>
                             <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Duration: 10m</div>
                         </button>
 
-                        <button type="button" data-automar-node="action_publish_pack" class="automar-node absolute left-[76%] top-[62%] w-[180px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
+                        <button type="button" data-automar-node="action_publish_pack"
+                            class="automar-node absolute left-[76%] top-[62%] w-[180px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
                             <div class="text-[10px] uppercase tracking-widest text-white/60">Action</div>
                             <div class="automar-node-title text-base text-white mt-1">Publish pack</div>
-                            <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Thumb + titles + hashtags</div>
+                            <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Thumb + titles + hashtags
+                            </div>
                         </button>
                     </div>
                 </section>
@@ -1126,25 +1534,32 @@
 
                     <div class="rounded-xl border border-white/10 bg-black/45 p-3 mb-4">
                         <p class="text-[10px] uppercase tracking-widest text-white/40 mb-2">AI Assistant</p>
-                        <textarea id="automationPromptInput" rows="3" placeholder="Ex: deixe captions uppercase, espere 20m e gere thumbnail automática." class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent/50"></textarea>
-                        <button id="automationApplyPromptBtn" class="mt-2 w-full px-3 py-2 text-xs rounded-lg bg-accent text-bg font-semibold hover:brightness-110 transition-all">Apply</button>
+                        <textarea id="automationPromptInput" rows="3"
+                            placeholder="Ex: deixe captions uppercase, espere 20m e gere thumbnail automática."
+                            class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent/50"></textarea>
+                        <button id="automationApplyPromptBtn"
+                            class="mt-2 w-full px-3 py-2 text-xs rounded-lg bg-accent text-bg font-semibold hover:brightness-110 transition-all">Apply</button>
                         <p id="automationPromptStatus" class="text-[11px] text-white/40 mt-2 min-h-[1rem]"></p>
                     </div>
 
                     <div class="rounded-xl border border-white/10 bg-black/45 p-3 mb-4 space-y-2">
                         <div class="flex items-center justify-between gap-2">
                             <p class="text-[10px] uppercase tracking-widest text-white/40">Config</p>
-                            <span id="automationNodeTypeBadge" class="text-[10px] px-2 py-1 rounded bg-white/10 text-white/70">ACTION</span>
+                            <span id="automationNodeTypeBadge"
+                                class="text-[10px] px-2 py-1 rounded bg-white/10 text-white/70">ACTION</span>
                         </div>
                         <p id="automationSelectedNodeLabel" class="text-sm text-white font-medium">Node</p>
                         <label class="block text-[11px] text-white/60">Name
-                            <input id="automationNodeNameInput" type="text" class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
+                            <input id="automationNodeNameInput" type="text"
+                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
                         </label>
                         <label class="block text-[11px] text-white/60">Delay (minutes)
-                            <input id="automationNodeDelayInput" type="number" min="0" max="1440" value="10" class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
+                            <input id="automationNodeDelayInput" type="number" min="0" max="1440" value="10"
+                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
                         </label>
                         <label class="block text-[11px] text-white/60">Caption preset
-                            <select id="automationNodePresetSelect" class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
+                            <select id="automationNodePresetSelect"
+                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
                                 <option value="balanced">Balanced</option>
                                 <option value="neon">Neon</option>
                                 <option value="clean">Clean</option>
@@ -1159,7 +1574,9 @@
                             Auto hashtags
                             <input id="automationNodeAutoHashtags" type="checkbox" class="accent-lime-400">
                         </label>
-                        <button id="automationNodeSaveBtn" class="w-full mt-1 px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Save node config</button>
+                        <button id="automationNodeSaveBtn"
+                            class="w-full mt-1 px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Save
+                            node config</button>
                     </div>
 
                     <div class="rounded-xl border border-white/10 bg-black/45 p-3">
@@ -1179,57 +1596,81 @@
                     <div class="rounded-xl border border-white/10 bg-black/45 p-3 mt-4 space-y-2">
                         <p class="text-[10px] uppercase tracking-widest text-white/40">AI Infrastructure</p>
                         <div class="grid grid-cols-2 gap-2">
-                            <button id="automationIngestBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Run ingest</button>
-                            <button id="automationLoadTemplatesBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Templates</button>
+                            <button id="automationIngestBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Run
+                                ingest</button>
+                            <button id="automationLoadTemplatesBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Templates</button>
                         </div>
                         <label class="block text-[11px] text-white/60">Patch timestamp (s)
-                            <input id="automationPatchTimestampInput" type="number" min="0" step="0.1" value="0" class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
+                            <input id="automationPatchTimestampInput" type="number" min="0" step="0.1" value="0"
+                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
                         </label>
                         <label class="block text-[11px] text-white/60">Patch instruction
-                            <textarea id="automationPatchInstructionInput" rows="2" placeholder="Ex: trocar produto na mão por novo modelo." class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-accent/50"></textarea>
+                            <textarea id="automationPatchInstructionInput" rows="2"
+                                placeholder="Ex: trocar produto na mão por novo modelo."
+                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-accent/50"></textarea>
                         </label>
                         <label class="block text-[11px] text-white/60">Provider
-                            <select id="automationPatchProviderSelect" class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
+                            <select id="automationPatchProviderSelect"
+                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
                                 <option value="google_nano_banana">Google Nano Banana</option>
                                 <option value="kling">Kling 3.0</option>
                                 <option value="veo">Veo</option>
                             </select>
                         </label>
                         <div class="grid grid-cols-2 gap-2">
-                            <button id="automationCreatePatchBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Create patch</button>
-                            <button id="automationExecutePatchBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Execute patch</button>
-                            <button id="automationPlanRenderBtn" class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Plan render</button>
-                            <button id="automationExecuteRenderBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/20 text-accent/90 hover:bg-accent hover:text-bg transition-colors">Execute render</button>
+                            <button id="automationCreatePatchBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Create
+                                patch</button>
+                            <button id="automationExecutePatchBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Execute
+                                patch</button>
+                            <button id="automationPlanRenderBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Plan
+                                render</button>
+                            <button id="automationExecuteRenderBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-accent/20 text-accent/90 hover:bg-accent hover:text-bg transition-colors">Execute
+                                render</button>
                         </div>
-                        <p id="automationInfraStatus" class="text-[11px] text-white/40 min-h-[1rem]">Pronto para ingest/frame patch/render incremental.</p>
-                        <div id="automationInfraLog" class="max-h-[128px] overflow-auto custom-scrollbar rounded-lg border border-white/10 bg-black/35 p-2 space-y-1 text-[11px] text-white/70"></div>
+                        <p id="automationInfraStatus" class="text-[11px] text-white/40 min-h-[1rem]">Pronto para
+                            ingest/frame patch/render incremental.</p>
+                        <div id="automationInfraLog"
+                            class="max-h-[128px] overflow-auto custom-scrollbar rounded-lg border border-white/10 bg-black/35 p-2 space-y-1 text-[11px] text-white/70">
+                        </div>
                     </div>
                 </aside>
             </div>
         </div>
     </div>
 
-    <div id="timelineModal" class="hidden fixed inset-0 z-[230] items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md">
+    <div id="timelineModal"
+        class="hidden fixed inset-0 z-[230] items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md">
         <div class="timeline-shell w-full max-w-[1380px] rounded-[28px] border border-lime-300/20 overflow-hidden">
             <div class="timeline-shell-inner p-3 sm:p-4">
-                <div class="timeline-glass rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 flex flex-wrap items-center justify-between gap-2">
+                <div
+                    class="timeline-glass rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 flex flex-wrap items-center justify-between gap-2">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                         <span class="timeline-badge">
                             <iconify-icon icon="solar:video-library-line-duotone" width="13" height="13"></iconify-icon>
                             Advanced Editor
                         </span>
-                        <h3 id="timelineClipTitle" class="text-base sm:text-[1.35rem] text-white tracking-tight truncate">Project Timeline</h3>
+                        <h3 id="timelineClipTitle"
+                            class="text-base sm:text-[1.35rem] text-white tracking-tight truncate">Project Timeline</h3>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button id="timelineOpenEditorBtn" class="timeline-chip-btn px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors flex items-center gap-1.5">
+                        <button id="timelineOpenEditorBtn"
+                            class="timeline-chip-btn px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors flex items-center gap-1.5">
                             <iconify-icon icon="solar:add-square-linear" width="15" height="15"></iconify-icon>
                             Timeline +
                         </button>
-                        <button id="timelinePlayBtn" class="timeline-white-btn px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-transform hover:scale-[1.03] flex items-center gap-1.5">
+                        <button id="timelinePlayBtn"
+                            class="timeline-white-btn px-3.5 py-2 rounded-xl text-[12px] font-semibold transition-transform hover:scale-[1.03] flex items-center gap-1.5">
                             <iconify-icon icon="solar:play-line-duotone" width="15" height="15"></iconify-icon>
                             Play / Pause
                         </button>
-                        <button id="timelineCloseBtn" class="w-9 h-9 rounded-xl border border-white/20 text-white/75 hover:text-white hover:border-white/45 transition-colors flex items-center justify-center">
+                        <button id="timelineCloseBtn"
+                            class="w-9 h-9 rounded-xl border border-white/20 text-white/75 hover:text-white hover:border-white/45 transition-colors flex items-center justify-center">
                             <iconify-icon icon="solar:close-circle-linear" width="19" height="19"></iconify-icon>
                         </button>
                     </div>
@@ -1239,19 +1680,23 @@
                     <div class="flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] sm:text-[12px]">
                         <div class="flex items-center gap-1.5 text-white/70">
                             <span class="timeline-soft-label">Start</span>
-                            <span id="timelineStartValue" class="font-mono text-white px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
+                            <span id="timelineStartValue"
+                                class="font-mono text-white px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
                         </div>
                         <div class="flex items-center gap-1.5 text-white/70">
                             <span class="timeline-soft-label">Playhead</span>
-                            <span id="timelinePlayheadValue" class="font-mono text-accent px-2 py-1 rounded-md border border-accent/30 bg-accent/10">0:00</span>
+                            <span id="timelinePlayheadValue"
+                                class="font-mono text-accent px-2 py-1 rounded-md border border-accent/30 bg-accent/10">0:00</span>
                         </div>
                         <div class="flex items-center gap-1.5 text-white/70">
                             <span class="timeline-soft-label">End</span>
-                            <span id="timelineEndValue" class="font-mono text-white px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
+                            <span id="timelineEndValue"
+                                class="font-mono text-white px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
                         </div>
                         <div class="flex items-center gap-1.5 text-white/70">
                             <span class="timeline-soft-label">Duration</span>
-                            <span id="timelineDurationValue" class="font-mono text-white/90 px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
+                            <span id="timelineDurationValue"
+                                class="font-mono text-white/90 px-2 py-1 rounded-md border border-white/15 bg-black/35">0:00</span>
                         </div>
                         <span id="timelineStatus" class="text-white/40 min-h-[1rem]"></span>
                     </div>
@@ -1275,7 +1720,8 @@
 
                             <div class="timeline-track-row">
                                 <div class="timeline-track-label">
-                                    <iconify-icon icon="solar:video-frame-play-horizontal-linear" width="14" height="14"></iconify-icon>
+                                    <iconify-icon icon="solar:video-frame-play-horizontal-linear" width="14"
+                                        height="14"></iconify-icon>
                                     V1
                                 </div>
                                 <div class="timeline-row-lane">
@@ -1286,7 +1732,8 @@
 
                             <div class="timeline-track-row">
                                 <div class="timeline-track-label">
-                                    <iconify-icon icon="solar:video-frame-play-horizontal-linear" width="14" height="14"></iconify-icon>
+                                    <iconify-icon icon="solar:video-frame-play-horizontal-linear" width="14"
+                                        height="14"></iconify-icon>
                                     V2
                                 </div>
                                 <div class="timeline-row-lane">
@@ -1298,12 +1745,15 @@
 
                             <div class="timeline-track-row">
                                 <div class="timeline-track-label">
-                                    <iconify-icon icon="solar:music-note-2-line-duotone" width="14" height="14"></iconify-icon>
+                                    <iconify-icon icon="solar:music-note-2-line-duotone" width="14"
+                                        height="14"></iconify-icon>
                                     Audio 1
                                 </div>
                                 <div class="timeline-row-lane">
-                                    <div class="timeline-clip-pill purple" style="left:2%; width:43%;">Voiceover 01</div>
-                                    <div class="timeline-clip-pill purple" style="left:47%; width:43%;">Background Music</div>
+                                    <div class="timeline-clip-pill purple" style="left:2%; width:43%;">Voiceover 01
+                                    </div>
+                                    <div class="timeline-clip-pill purple" style="left:47%; width:43%;">Background Music
+                                    </div>
                                 </div>
                             </div>
 
@@ -1320,15 +1770,26 @@
                         </div>
 
                         <div class="mt-3">
-                            <input id="timelineScrubber" type="range" min="0" max="1000" value="0" class="custom-range w-full h-1.5 bg-white/10 rounded-full appearance-none outline-none">
+                            <input id="timelineScrubber" type="range" min="0" max="1000" value="0"
+                                class="custom-range w-full h-1.5 bg-white/10 rounded-full appearance-none outline-none">
                         </div>
 
                         <div class="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            <button id="timelineSetInBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Set IN</button>
-                            <button id="timelineSetOutBtn" class="px-3 py-2 text-xs rounded-lg border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Set OUT</button>
-                            <button id="timelineCutLeftBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Cut Left</button>
-                            <button id="timelineCutRightBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Cut Right</button>
-                            <button id="timelineResetBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Reset Cut</button>
+                            <button id="timelineSetInBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Set
+                                IN</button>
+                            <button id="timelineSetOutBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-accent/35 text-accent hover:bg-accent hover:text-bg transition-colors">Set
+                                OUT</button>
+                            <button id="timelineCutLeftBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Cut
+                                Left</button>
+                            <button id="timelineCutRightBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Cut
+                                Right</button>
+                            <button id="timelineResetBtn"
+                                class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Reset
+                                Cut</button>
                         </div>
                     </div>
 
@@ -1363,15 +1824,18 @@
                             <p class="text-xs text-white/70 mb-2">Crop</p>
                             <div class="space-y-2.5 text-[11px] text-white/60">
                                 <label class="block">Zoom
-                                    <input id="timelineCropZoom" type="range" min="100" max="180" value="100" class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
+                                    <input id="timelineCropZoom" type="range" min="100" max="180" value="100"
+                                        class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
                                     <span id="timelineCropZoomValue" class="text-white/70">100%</span>
                                 </label>
                                 <label class="block">X Offset
-                                    <input id="timelineCropX" type="range" min="-40" max="40" value="0" class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
+                                    <input id="timelineCropX" type="range" min="-40" max="40" value="0"
+                                        class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
                                     <span id="timelineCropXValue" class="text-white/70">0%</span>
                                 </label>
                                 <label class="block">Y Offset
-                                    <input id="timelineCropY" type="range" min="-40" max="40" value="0" class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
+                                    <input id="timelineCropY" type="range" min="-40" max="40" value="0"
+                                        class="custom-range mt-1.5 w-full h-1 bg-white/10 rounded-full appearance-none outline-none">
                                     <span id="timelineCropYValue" class="text-white/70">0%</span>
                                 </label>
                             </div>
@@ -1379,20 +1843,30 @@
 
                         <div class="mt-3 rounded-xl border border-white/10 bg-black/35 p-3">
                             <p class="text-xs text-white/70 mb-2">Add / Paste</p>
-                            <input id="timelineOverlayTextInput" type="text" placeholder="Texto para sobreposição..." class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent/50">
+                            <input id="timelineOverlayTextInput" type="text" placeholder="Texto para sobreposição..."
+                                class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent/50">
                             <div class="mt-2 grid grid-cols-2 gap-2">
-                                <button id="timelineAddOverlayBtn" class="px-3 py-2 text-xs rounded-lg bg-accent/15 border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Add Text</button>
-                                <button id="timelineCopyStyleBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Copy Style</button>
+                                <button id="timelineAddOverlayBtn"
+                                    class="px-3 py-2 text-xs rounded-lg bg-accent/15 border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Add
+                                    Text</button>
+                                <button id="timelineCopyStyleBtn"
+                                    class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Copy
+                                    Style</button>
                             </div>
                             <div class="mt-2 grid grid-cols-2 gap-2">
-                                <button id="timelinePasteStyleBtn" class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Paste Style</button>
-                                <button class="px-3 py-2 text-xs rounded-lg border border-accent/25 text-accent/90 bg-accent/10">AI Process Ready</button>
+                                <button id="timelinePasteStyleBtn"
+                                    class="px-3 py-2 text-xs rounded-lg border border-white/25 text-white/80 hover:border-white/40 hover:text-white transition-colors">Paste
+                                    Style</button>
+                                <button
+                                    class="px-3 py-2 text-xs rounded-lg border border-accent/25 text-accent/90 bg-accent/10">AI
+                                    Process Ready</button>
                             </div>
                         </div>
 
                         <div class="mt-3 rounded-xl border border-white/10 bg-black/35 p-3">
                             <p class="text-xs text-white/70 mb-2">Overlay items</p>
-                            <div id="timelineOverlayList" class="max-h-[200px] overflow-auto custom-scrollbar space-y-2 text-xs"></div>
+                            <div id="timelineOverlayList"
+                                class="max-h-[200px] overflow-auto custom-scrollbar space-y-2 text-xs"></div>
                         </div>
                     </aside>
                 </div>
@@ -1445,7 +1919,7 @@
                 this.scene = new THREE.Scene();
                 const geo = new THREE.BufferGeometry();
                 const idx = new Float32Array(this.N), sizes = new Float32Array(this.N);
-                for(let i=0; i<this.N; i++) { idx[i] = i; sizes[i] = 1.0 + Math.random() * 2.0; }
+                for (let i = 0; i < this.N; i++) { idx[i] = i; sizes[i] = 1.0 + Math.random() * 2.0; }
                 geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.N * 3), 3));
                 geo.setAttribute('aIndex', new THREE.BufferAttribute(idx, 1));
                 geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
@@ -2824,7 +3298,14 @@
                     );
                 }
 
-                const data = await response.json().catch(() => ({}));
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch {
+                    const text = await response.text().catch(() => '');
+                    data = { error: text ? `(HTTP ${response.status}) ${text.slice(0, 150)}...` : `HTTP ${response.status} sem resposta JSON.` };
+                }
+
                 if (!response.ok) {
                     throw new Error(data.error || 'Erro ao transcrever com ElevenLabs.');
                 }
@@ -3644,7 +4125,7 @@
                 if (automationInfraLog && !automationInfraLog.children.length) {
                     appendAutomationInfraLog('Infra pronta: ingest, patch de frame e render incremental disponíveis.', 'neutral');
                 }
-                loadWorkflowTemplatesFromBackend().catch(() => {});
+                loadWorkflowTemplatesFromBackend().catch(() => { });
 
                 videoAutomationModal.classList.remove('hidden');
                 videoAutomationModal.classList.add('flex');
@@ -5193,7 +5674,7 @@
                 if (clampedCurrent >= clip.end - epsilon) {
                     if (getPlaybackStateIsPlaying()) {
                         seekPlayback(clip.start);
-                        playPlayback().catch(() => {});
+                        playPlayback().catch(() => { });
                     } else {
                         seekPlayback(clip.start);
                     }
@@ -6163,7 +6644,7 @@
                 updateThemeSubjectFilterOptions();
                 applyFilter('all');
                 updateWorkflowGuide();
-                refreshBackendHealth(false).catch(() => {});
+                refreshBackendHealth(false).catch(() => { });
             });
 
             fileInput.addEventListener('change', () => {
@@ -6244,13 +6725,13 @@
                     if (shouldAutoTranscribe) {
                         setTranscribeStatus('Link detectado. Iniciando transcrição automática...', 'muted');
                         setTimeout(() => {
-                            handleTranscribeCaptions({ automatic: true }).catch(() => {});
+                            handleTranscribeCaptions({ automatic: true }).catch(() => { });
                         }, 120);
                     } else {
                         setTranscribeStatus('Use Reajustar para sincronizar/atualizar captions após ajustes de corte.', 'muted');
                     }
                     addChatMessage('assistant', `Project loaded: ${appState.clips.length} clips ready to edit.`);
-                    refreshBackendHealth(false).catch(() => {});
+                    refreshBackendHealth(false).catch(() => { });
                     updateWorkflowGuide();
                 } catch (error) {
                     cleanupObjectUrl();
@@ -6784,7 +7265,7 @@
 
             renderBtn.addEventListener('click', handleExport);
             transcribeCaptionsBtn.addEventListener('click', () => {
-                handleTranscribeCaptions().catch(() => {});
+                handleTranscribeCaptions().catch(() => { });
             });
             saveYoutubeCookiesBtn.addEventListener('click', () => {
                 const raw = String(youtubeCookiesInput.value || '').trim();
@@ -6795,14 +7276,14 @@
                 appState.youtubeCookies = raw;
                 saveYoutubeCookies(raw);
                 setYoutubeCookiesStatus('Cookies salvos localmente. Próxima transcrição já envia para o backend.', 'success');
-                refreshBackendHealth(true).catch(() => {});
+                refreshBackendHealth(true).catch(() => { });
             });
             clearYoutubeCookiesBtn.addEventListener('click', () => {
                 appState.youtubeCookies = '';
                 youtubeCookiesInput.value = '';
                 clearSavedYoutubeCookies();
                 setYoutubeCookiesStatus('Cookies locais removidos.', 'muted');
-                refreshBackendHealth(true).catch(() => {});
+                refreshBackendHealth(true).catch(() => { });
             });
 
             commandSendBtn.addEventListener('click', async () => {
@@ -6936,8 +7417,10 @@
             setTranscribeStatus('Envie um link para transcrição automática. Use Reajustar para recalibrar captions.', 'muted');
             setGenerateStatus('Cole link do YouTube, link direto de vídeo (mp4/webm/mov) ou envie um arquivo para começar.', 'muted');
             updateWorkflowGuide();
-            refreshBackendHealth(true).catch(() => {});
+            refreshBackendHealth(true).catch(() => { });
         });
     </script>
 
-</body></html>
+</body>
+
+</html>
