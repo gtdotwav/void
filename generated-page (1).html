@@ -1648,6 +1648,7 @@
             const COMPLEMENT_PROVIDER_STORAGE_KEY = 'jv_complement_provider';
             const COMPLEMENT_OPENAI_KEY_STORAGE_KEY = 'jv_complement_openai_key';
             const YOUTUBE_COOKIES_STORAGE_KEY = 'jv_youtube_cookies';
+            const BACKEND_BASE_OVERRIDE_STORAGE_KEY = 'jv_backend_base_override';
 
             const clipThemes = [
                 { title: 'Open With the Bold Claim', hook: 'Hook: Bold Claim' },
@@ -2047,7 +2048,63 @@
                 return normalizeLocalHost(window.location.hostname);
             }
 
+            function normalizeBackendOverrideBase(rawBase) {
+                const candidate = String(rawBase || '').trim();
+                if (!candidate) return '';
+                try {
+                    const parsed = new URL(candidate);
+                    if (!/^https?:$/.test(parsed.protocol)) return '';
+                    return parsed.origin;
+                } catch (_error) {
+                    return '';
+                }
+            }
+
+            function getStoredBackendOverrideBase() {
+                try {
+                    const saved = localStorage.getItem(BACKEND_BASE_OVERRIDE_STORAGE_KEY);
+                    return normalizeBackendOverrideBase(saved);
+                } catch (_error) {
+                    return '';
+                }
+            }
+
+            function getBackendOverrideFromQuery() {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const raw = String(params.get('backend') || '').trim();
+                    if (!raw || raw.toLowerCase() === 'off') return '';
+                    return normalizeBackendOverrideBase(raw);
+                } catch (_error) {
+                    return '';
+                }
+            }
+
+            function applyBackendOverrideFromQuery() {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const raw = String(params.get('backend') || '').trim();
+                    if (!raw) return;
+                    if (raw.toLowerCase() === 'off') {
+                        localStorage.removeItem(BACKEND_BASE_OVERRIDE_STORAGE_KEY);
+                        return;
+                    }
+                    const normalized = normalizeBackendOverrideBase(raw);
+                    if (normalized) {
+                        localStorage.setItem(BACKEND_BASE_OVERRIDE_STORAGE_KEY, normalized);
+                    }
+                } catch (_error) {
+                    // noop
+                }
+            }
+
+            function getBackendOverrideBase() {
+                return getBackendOverrideFromQuery() || getStoredBackendOverrideBase();
+            }
+
             function resolveBackendApiBase() {
+                const override = getBackendOverrideBase();
+                if (override) return override;
                 if (window.location.protocol === 'file:') return 'http://127.0.0.1:8787';
                 if (window.location.port === '8787') return window.location.origin;
                 if (!/^https?:$/.test(window.location.protocol)) return 'http://127.0.0.1:8787';
@@ -2172,6 +2229,8 @@
                 }
                 const lines = [];
                 lines.push(appState.backend.online ? 'Backend: online' : 'Backend: offline');
+                const overrideBase = getBackendOverrideBase();
+                if (overrideBase) lines.push(`Backend override: ${overrideBase}`);
                 if (appState.backend.runtime) lines.push(`Runtime: ${appState.backend.runtime}`);
                 lines.push(appState.backend.hasElevenLabsKey ? 'ElevenLabs key: OK' : 'ElevenLabs key: ausente');
                 lines.push(appState.backend.hasYoutubeCookies ? 'YouTube cookies (backend): OK' : 'YouTube cookies (backend): ausente');
@@ -6855,6 +6914,7 @@
             ensureAutomationState();
             renderAutomationNodesUi();
             syncAutomationNodePanel();
+            applyBackendOverrideFromQuery();
             loadComplementSettings();
             loadYoutubeCookieSettings();
             switchEditorTab('captions');
