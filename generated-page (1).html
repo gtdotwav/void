@@ -3181,9 +3181,9 @@
             }
 
             async function buildTranscribeRequestPayload() {
-                if (appState.sourceKind === 'youtube') {
+                if (appState.sourceKind === 'youtube' || (appState.sourceKind === 'ingested' && appState.youtubeVideoId)) {
                     const payload = {
-                        youtubeUrl: appState.sourceSrc,
+                        youtubeUrl: appState.youtubeVideoId ? `https://www.youtube.com/watch?v=${appState.youtubeVideoId}` : appState.sourceSrc,
                         modelId: 'scribe_v1',
                         allowSyntheticFallback: false
                     };
