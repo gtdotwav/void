@@ -549,6 +549,80 @@
             text-transform: uppercase;
             color: rgba(255, 255, 255, 0.42);
         }
+
+        /* SPACE CANVAS STYLES */
+        .canvas-space {
+            --bg-canvas: #0d0e11;
+            --bg-dot: #25262a;
+            --panel-base: #1a1c20;
+            --panel-elevated: #222429;
+            --panel-inset: #131417;
+            --border-subtle: #2d2f34;
+            --text-primary: #e2e4e9;
+            --text-secondary: #8b8e96;
+            --text-tertiary: #5b5c61;
+            --accent-green: #8cf1b4;
+            --accent-blue: #60a5fa;
+            --accent-pink: #ff629a;
+            --accent-yellow: #f1d84a;
+            --accent-red: #f87171;
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--bg-canvas);
+            background-image: radial-gradient(var(--bg-dot) 1px, transparent 0);
+            background-size: 32px 32px;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+
+        .canvas-space .node-glow-blue::before {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 10%;
+            width: 80%;
+            height: 30px;
+            filter: blur(24px);
+            z-index: -1;
+            opacity: 0.4;
+            border-radius: 50%;
+            background: var(--accent-blue);
+        }
+
+        .canvas-space .node-glow-green::before {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 10%;
+            width: 80%;
+            height: 30px;
+            filter: blur(24px);
+            z-index: -1;
+            opacity: 0.4;
+            border-radius: 50%;
+            background: var(--accent-green);
+        }
+
+        .canvas-space .wire {
+            fill: none;
+            stroke: #3a3f4b;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+        }
+
+        .canvas-space .wire.active {
+            stroke: var(--accent-blue);
+            filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.4));
+        }
+
+        .canvas-space .blob {
+            position: absolute;
+            border-radius: 50%;
+            mix-blend-mode: screen;
+            filter: blur(40px);
+        }
     </style>
 </head>
 
@@ -1488,227 +1562,233 @@
         </main>
     </div>
 
-    <div id="videoAutomationModal"
-        class="hidden fixed inset-0 z-[220] items-center justify-center p-2 sm:p-5 bg-black/85 backdrop-blur-md">
-        <div
-            class="w-full max-w-[1520px] h-[94vh] rounded-2xl border border-white/10 bg-[#07090d] shadow-2xl overflow-hidden flex flex-col">
-            <div class="px-4 sm:px-6 py-3 border-b border-white/10 bg-black/40 flex items-center justify-between">
-                <div class="flex items-center gap-2 text-xs text-white/50">
-                    <iconify-icon icon="solar:layers-linear" width="16" height="16"></iconify-icon>
-                    <span>Workflows</span>
-                    <span>/</span>
-                    <span id="automationSpaceTitle" class="text-white font-medium">Automar Video Space</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button id="automationRunBtn"
-                        class="px-3 py-1.5 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Test
-                        run</button>
-                    <button id="automationDeployBtn"
-                        class="px-3 py-1.5 text-xs rounded-lg bg-accent text-bg font-semibold hover:brightness-110 transition-all">Deploy</button>
+    <div id="videoAutomationModal" class="hidden fixed inset-0 z-[220] bg-black">
+        <div class="canvas-space">
+            <svg class="absolute inset-0 w-full h-full pointer-events-none z-0">
+                <path class="wire active" d="M 460 390 C 530 390, 530 275, 600 275"></path>
+                <path class="wire active" d="M 920 240 C 1000 240, 1000 200, 1080 200"></path>
+                <path class="wire" d="M 920 310 C 980 310, 950 420, 800 420" stroke-dasharray="4 4" opacity="0.3">
+                </path>
+            </svg>
+
+            <nav class="absolute top-6 left-6 right-6 flex justify-between items-start z-50">
+                <div class="flex gap-3 items-center">
                     <button id="videoAutomationCloseBtn"
-                        class="w-8 h-8 rounded-lg border border-white/15 text-white/70 hover:text-white hover:border-white/30 transition-colors">
-                        <iconify-icon icon="solar:close-circle-linear" width="18" height="18"></iconify-icon>
+                        class="w-10 h-10 bg-[var(--panel-base)] border border-[var(--border-subtle)] rounded-xl flex items-center justify-center shadow-xl hover:bg-[var(--panel-elevated)] transition-colors text-white">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
                     </button>
+                    <div
+                        class="flex bg-[var(--panel-base)] border border-[var(--border-subtle)] rounded-xl p-1 shadow-xl">
+                        <button
+                            class="px-4 py-2 text-xs font-medium bg-[var(--panel-elevated)] text-[var(--text-primary)] rounded-md">Workflow</button>
+                        <button
+                            class="px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Edit</button>
+                        <button
+                            class="px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Help</button>
+                    </div>
+                </div>
+                <div class="flex gap-3 items-center">
+                    <div
+                        class="flex items-center gap-2 bg-[var(--panel-base)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 shadow-xl">
+                        <div class="w-2 h-2 rounded-full bg-[var(--accent-green)] shadow-[0_0_8px_var(--accent-green)]">
+                        </div>
+                        <span
+                            class="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-bold">Running</span>
+                    </div>
+                    <button
+                        class="flex items-center gap-2 bg-[var(--panel-base)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-xs font-medium px-4 py-2 rounded-xl shadow-xl hover:bg-[var(--panel-elevated)] transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"></path>
+                        </svg> Share
+                    </button>
+                    <button
+                        class="flex items-center gap-2 bg-[var(--text-primary)] text-black text-xs font-bold px-4 py-2 rounded-xl shadow-xl hover:opacity-90 transition-opacity">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg> Queue
+                    </button>
+                </div>
+            </nav>
+
+            <div class="absolute text-xs text-[var(--text-primary)] flex items-center gap-2"
+                style="left: 120px; top: 250px;">
+                <div class="w-2 h-2 rounded-full bg-white"></div> Prompt
+            </div>
+            <article
+                class="absolute bg-[var(--panel-base)] border border-[var(--border-subtle)] rounded-2xl w-[340px] shadow-2xl z-10"
+                style="left: 120px; top: 280px;">
+                <div class="p-4 flex justify-between border-b border-white/5">
+                    <div class="flex items-center gap-2 text-sm font-medium">
+                        <div class="w-2 h-2 rounded-full bg-[var(--accent-green)]"></div> Positive
+                    </div>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="text-xs leading-relaxed text-[var(--text-primary)] italic">"A black bear with a pink
+                        snout, minimalist style, soft gradients, clear blue sky"</div>
+                    <div
+                        class="bg-[var(--panel-inset)] border border-[var(--border-subtle)] rounded-lg p-3 h-20 text-xs text-[var(--text-secondary)]">
+                        Type what you want to get</div>
+                    <div class="flex justify-end relative">
+                        <div
+                            class="bg-[var(--accent-green)] text-black text-[10px] font-bold px-3 py-1.5 rounded flex items-center gap-2 cursor-pointer uppercase tracking-tight">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M5 3l14 9-14 9V3z"></path>
+                            </svg> Generate
+                        </div>
+                        <div
+                            class="absolute -right-9 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[var(--accent-blue)] bg-[var(--accent-blue)]">
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <div class="absolute text-xs text-[var(--text-primary)] flex items-center gap-2"
+                style="left: 600px; top: 150px;">
+                <div class="w-2 h-2 rounded-full bg-white"></div> Generator
+            </div>
+            <article
+                class="absolute bg-[var(--panel-base)] border border-[var(--border-subtle)] rounded-2xl w-[320px] shadow-2xl z-10 node-glow-blue"
+                style="left: 600px; top: 180px;">
+                <div class="p-4 pt-6 space-y-6">
+                    <div class="relative flex justify-between items-center">
+                        <div
+                            class="absolute -left-9 w-3 h-3 rounded-full border-2 border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+                        </div>
+                        <span class="text-xs text-[var(--text-secondary)] flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-[var(--accent-yellow)]"></div> model
+                        </span>
+                    </div>
+                    <div class="relative flex justify-between items-center">
+                        <div
+                            class="absolute -left-9 w-3 h-3 rounded-full border-2 border-[var(--accent-blue)] bg-[var(--accent-blue)]">
+                        </div>
+                        <span class="text-xs text-[var(--text-secondary)] flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)]"></div> positive
+                        </span>
+                    </div>
+                    <div class="relative flex justify-between items-center mb-4">
+                        <div
+                            class="absolute -left-9 w-3 h-3 rounded-full border-2 border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+                        </div>
+                        <span class="text-xs text-[var(--text-secondary)] flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-[var(--accent-red)]"></div> negative
+                        </span>
+                    </div>
+                    <div class="space-y-3">
+                        <div
+                            class="flex justify-between items-center text-[10px] text-[var(--text-secondary)] uppercase">
+                            <span>Randomness</span>
+                            <div
+                                class="bg-[var(--panel-inset)] px-3 py-1.5 rounded border border-[var(--border-subtle)] text-[var(--text-primary)] w-28 flex justify-between">
+                                12345 <span>▾</span></div>
+                        </div>
+                        <div
+                            class="flex justify-between items-center text-[10px] text-[var(--text-secondary)] uppercase">
+                            <span>Quality steps</span>
+                            <div
+                                class="bg-[var(--panel-inset)] px-3 py-1.5 rounded border border-[var(--border-subtle)] text-[var(--text-primary)] w-28 flex justify-center gap-4">
+                                <span>‹</span> 30 <span>›</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative pt-2">
+                        <div
+                            class="absolute -right-9 top-0 w-3 h-3 rounded-full border-2 border-[var(--accent-blue)] bg-[var(--accent-blue)]">
+                        </div>
+                        <div
+                            class="text-right text-xs text-[var(--text-secondary)] flex items-center justify-end gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-[var(--accent-blue)]"></div> image
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <div class="absolute text-xs text-[var(--text-primary)] flex items-center gap-2"
+                style="left: 1080px; top: 110px;">
+                <div class="w-2 h-2 rounded-full bg-white"></div> Preview
+            </div>
+            <article
+                class="absolute bg-[var(--panel-base)] border border-[var(--border-subtle)] rounded-2xl w-[360px] shadow-2xl z-10 node-glow-green"
+                style="left: 1080px; top: 140px;">
+                <div class="p-3">
+                    <div class="relative h-[300px] bg-black rounded-xl overflow-hidden mb-4">
+                        <div class="absolute inset-0 bg-[#0d1117] filter blur-[40px]">
+                            <div class="blob w-1/2 h-1/2 top-10 left-10 bg-[#ff7eb3]"></div>
+                            <div class="blob w-2/3 h-2/3 bottom-5 right-5 bg-[#60a5fa]"></div>
+                            <div class="blob w-1/3 h-1/3 top-1/2 left-1/2 bg-[#facc15] opacity-60"></div>
+                        </div>
+                        <div
+                            class="absolute -left-6 top-10 w-3 h-3 rounded-full border-2 border-[var(--accent-blue)] bg-[var(--accent-blue)]">
+                        </div>
+                    </div>
+                    <div class="px-1">
+                        <div class="text-sm font-medium mb-1">Final Result</div>
+                        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">Minimalist abstract render
+                            with soft gradients and smooth shapes against a dark space.</p>
+                    </div>
+                    <div
+                        class="mt-4 flex bg-[var(--panel-elevated)] border border-[var(--border-subtle)] rounded-xl p-1 justify-between">
+                        <div class="flex border-r border-[var(--border-subtle)] pr-1">
+                            <button class="p-2 text-[var(--text-secondary)] hover:text-white"><svg class="w-4 h-4"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                                </svg></button>
+                            <button class="p-2 text-[var(--text-secondary)] hover:text-white"><svg class="w-4 h-4"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg></button>
+                        </div>
+                        <div class="flex gap-1">
+                            <button class="px-2 text-[10px] font-bold">2x ▾</button>
+                            <button class="px-2 text-[10px] font-bold">PNG ▾</button>
+                            <button class="p-2 text-[var(--text-secondary)] hover:text-white"><svg class="w-4 h-4"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
+                                </svg></button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <div class="absolute z-[60] p-2 bg-[var(--panel-base)] border border-[var(--border-subtle)] rounded-xl w-56 shadow-2xl flex flex-col"
+                style="left: 780px; top: 400px;">
+                <div class="flex items-center gap-3 p-2 mb-2">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-[var(--panel-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent-blue)]">
+                        +</div>
+                    <div>
+                        <div class="text-[12px] font-bold">Add node</div>
+                        <div class="text-[9px] text-[var(--text-tertiary)] uppercase">Core Action</div>
+                    </div>
+                </div>
+                <div class="h-px bg-[var(--border-subtle)] my-1"></div>
+                <div
+                    class="flex items-center justify-between p-2 text-xs text-[var(--text-secondary)] hover:bg-white/5 rounded-lg cursor-pointer">
+                    <span>Example data</span><span class="font-mono text-[9px] opacity-50">⌘D</span>
+                </div>
+                <div
+                    class="flex items-center justify-between p-2 text-xs text-[var(--text-secondary)] hover:bg-white/5 rounded-lg cursor-pointer">
+                    <span>Copy link</span><span class="font-mono text-[9px] opacity-50">⌘C</span>
+                </div>
+                <div
+                    class="flex items-center justify-between p-2 text-xs text-[var(--accent-red)] hover:bg-red-500/10 rounded-lg cursor-pointer mt-1 border-t border-[var(--border-subtle)] pt-2">
+                    <span>Remove</span>
                 </div>
             </div>
 
-            <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12">
-                <aside class="lg:col-span-2 border-r border-white/10 bg-black/35 p-4 flex flex-col gap-4">
-                    <div class="text-lg font-display text-white flex items-center gap-2">
-                        <iconify-icon icon="solar:box-linear" width="18" height="18" class="text-accent"></iconify-icon>
-                        Automar
-                    </div>
-                    <div class="relative">
-                        <input type="text" readonly value="video workflows"
-                            class="w-full text-xs bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white/60">
-                    </div>
-                    <div class="space-y-2 text-sm">
-                        <button
-                            class="w-full text-left px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90">Overview</button>
-                        <button
-                            class="w-full text-left px-3 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent">Workflows</button>
-                        <button
-                            class="w-full text-left px-3 py-2 rounded-lg bg-white/[0.02] border border-white/10 text-white/70">Integrations</button>
-                        <button
-                            class="w-full text-left px-3 py-2 rounded-lg bg-white/[0.02] border border-white/10 text-white/70">Settings</button>
-                    </div>
-                    <div class="mt-auto text-[11px] text-white/40">
-                        <p>Conectado ao Space:</p>
-                        <p id="automationSpaceFooterName" class="text-white/80 mt-1">-</p>
-                    </div>
-                </aside>
-
-                <section class="lg:col-span-7 p-4 sm:p-6 border-r border-white/10 relative overflow-auto">
-                    <div
-                        class="relative h-full min-h-[520px] rounded-xl border border-white/10 bg-[radial-gradient(circle_at_25%_15%,rgba(200,255,0,0.08),transparent_38%),radial-gradient(circle_at_85%_85%,rgba(29,78,216,0.16),transparent_42%),linear-gradient(to_bottom,#05070b,#020306)] overflow-hidden">
-                        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 640"
-                            preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="automarFlowLine" x1="0" x2="1">
-                                    <stop offset="0%" stop-color="#4f596b" stop-opacity="0.45"></stop>
-                                    <stop offset="100%" stop-color="#c8ff00" stop-opacity="0.9"></stop>
-                                </linearGradient>
-                            </defs>
-                            <path d="M180 320 C300 320, 330 190, 460 190" stroke="url(#automarFlowLine)"
-                                stroke-width="3" fill="none"></path>
-                            <path d="M180 320 C300 320, 330 440, 460 440" stroke="url(#automarFlowLine)"
-                                stroke-width="3" fill="none"></path>
-                            <path d="M555 190 C680 190, 700 315, 790 315" stroke="url(#automarFlowLine)"
-                                stroke-width="3" fill="none"></path>
-                            <path d="M555 440 C680 440, 700 325, 790 325" stroke="url(#automarFlowLine)"
-                                stroke-width="3" fill="none"></path>
-                        </svg>
-
-                        <button type="button" data-automar-node="trigger_new_video"
-                            class="automar-node absolute left-[6%] top-[40%] w-[200px] rounded-xl border border-accent/30 bg-black/70 px-4 py-3 text-left shadow-[0_0_18px_rgba(200,255,0,0.12)]">
-                            <div class="text-[10px] uppercase tracking-widest text-accent">Trigger</div>
-                            <div class="automar-node-title text-base text-white mt-1">New video ingested</div>
-                            <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Source: clip library</div>
-                        </button>
-
-                        <button type="button" data-automar-node="action_detect_cuts"
-                            class="automar-node absolute left-[44%] top-[17%] w-[220px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
-                            <div class="text-[10px] uppercase tracking-widest text-white/60">Action</div>
-                            <div class="automar-node-title text-base text-white mt-1">Detect best cuts</div>
-                            <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Score + timing map</div>
-                        </button>
-
-                        <button type="button" data-automar-node="action_captions"
-                            class="automar-node absolute left-[44%] top-[58%] w-[220px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
-                            <div class="text-[10px] uppercase tracking-widest text-white/60">Action</div>
-                            <div class="automar-node-title text-base text-white mt-1">Generate captions</div>
-                            <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Model: scribe_v1</div>
-                        </button>
-
-                        <button type="button" data-automar-node="logic_review_wait"
-                            class="automar-node absolute left-[76%] top-[36%] w-[180px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
-                            <div class="text-[10px] uppercase tracking-widest text-white/60">Logic</div>
-                            <div class="automar-node-title text-base text-white mt-1">Wait review</div>
-                            <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Duration: 10m</div>
-                        </button>
-
-                        <button type="button" data-automar-node="action_publish_pack"
-                            class="automar-node absolute left-[76%] top-[62%] w-[180px] rounded-xl border border-white/20 bg-black/75 px-4 py-3 text-left">
-                            <div class="text-[10px] uppercase tracking-widest text-white/60">Action</div>
-                            <div class="automar-node-title text-base text-white mt-1">Publish pack</div>
-                            <div class="text-xs text-white/50 mt-2 automar-node-subtitle">Thumb + titles + hashtags
-                            </div>
-                        </button>
-                    </div>
-                </section>
-
-                <aside class="lg:col-span-3 p-4 sm:p-5 overflow-auto bg-black/25">
-                    <h3 class="text-lg font-display text-white mb-1">Video automation</h3>
-                    <p class="text-xs text-white/50 mb-4">Use IA instructions para ajustar o node selecionado.</p>
-
-                    <div class="rounded-xl border border-white/10 bg-black/45 p-3 mb-4">
-                        <p class="text-[10px] uppercase tracking-widest text-white/40 mb-2">AI Assistant</p>
-                        <textarea id="automationPromptInput" rows="3"
-                            placeholder="Ex: deixe captions uppercase, espere 20m e gere thumbnail automática."
-                            class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent/50"></textarea>
-                        <button id="automationApplyPromptBtn"
-                            class="mt-2 w-full px-3 py-2 text-xs rounded-lg bg-accent text-bg font-semibold hover:brightness-110 transition-all">Apply</button>
-                        <p id="automationPromptStatus" class="text-[11px] text-white/40 mt-2 min-h-[1rem]"></p>
-                    </div>
-
-                    <div class="rounded-xl border border-white/10 bg-black/45 p-3 mb-4 space-y-2">
-                        <div class="flex items-center justify-between gap-2">
-                            <p class="text-[10px] uppercase tracking-widest text-white/40">Config</p>
-                            <span id="automationNodeTypeBadge"
-                                class="text-[10px] px-2 py-1 rounded bg-white/10 text-white/70">ACTION</span>
-                        </div>
-                        <p id="automationSelectedNodeLabel" class="text-sm text-white font-medium">Node</p>
-                        <label class="block text-[11px] text-white/60">Name
-                            <input id="automationNodeNameInput" type="text"
-                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
-                        </label>
-                        <label class="block text-[11px] text-white/60">Delay (minutes)
-                            <input id="automationNodeDelayInput" type="number" min="0" max="1440" value="10"
-                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
-                        </label>
-                        <label class="block text-[11px] text-white/60">Caption preset
-                            <select id="automationNodePresetSelect"
-                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
-                                <option value="balanced">Balanced</option>
-                                <option value="neon">Neon</option>
-                                <option value="clean">Clean</option>
-                                <option value="bold">Bold</option>
-                            </select>
-                        </label>
-                        <label class="flex items-center justify-between text-[11px] text-white/70">
-                            Auto thumb
-                            <input id="automationNodeAutoThumb" type="checkbox" class="accent-lime-400">
-                        </label>
-                        <label class="flex items-center justify-between text-[11px] text-white/70">
-                            Auto hashtags
-                            <input id="automationNodeAutoHashtags" type="checkbox" class="accent-lime-400">
-                        </label>
-                        <button id="automationNodeSaveBtn"
-                            class="w-full mt-1 px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Save
-                            node config</button>
-                    </div>
-
-                    <div class="rounded-xl border border-white/10 bg-black/45 p-3">
-                        <p class="text-[10px] uppercase tracking-widest text-white/40 mb-2">Flow health</p>
-                        <div class="grid grid-cols-2 gap-2 text-xs">
-                            <div class="rounded-lg border border-white/10 p-2 text-center">
-                                <p class="text-white/40">Nodes</p>
-                                <p class="text-white font-semibold" id="automationNodesCount">5</p>
-                            </div>
-                            <div class="rounded-lg border border-white/10 p-2 text-center">
-                                <p class="text-white/40">Success</p>
-                                <p class="text-accent font-semibold" id="automationSuccessRate">99.1%</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="rounded-xl border border-white/10 bg-black/45 p-3 mt-4 space-y-2">
-                        <p class="text-[10px] uppercase tracking-widest text-white/40">AI Infrastructure</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button id="automationIngestBtn"
-                                class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Run
-                                ingest</button>
-                            <button id="automationLoadTemplatesBtn"
-                                class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Templates</button>
-                        </div>
-                        <label class="block text-[11px] text-white/60">Patch timestamp (s)
-                            <input id="automationPatchTimestampInput" type="number" min="0" step="0.1" value="0"
-                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
-                        </label>
-                        <label class="block text-[11px] text-white/60">Patch instruction
-                            <textarea id="automationPatchInstructionInput" rows="2"
-                                placeholder="Ex: trocar produto na mão por novo modelo."
-                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-accent/50"></textarea>
-                        </label>
-                        <label class="block text-[11px] text-white/60">Provider
-                            <select id="automationPatchProviderSelect"
-                                class="mt-1 w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-xs text-white">
-                                <option value="google_nano_banana">Google Nano Banana</option>
-                                <option value="kling">Kling 3.0</option>
-                                <option value="veo">Veo</option>
-                            </select>
-                        </label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button id="automationCreatePatchBtn"
-                                class="px-3 py-2 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent hover:text-bg transition-colors">Create
-                                patch</button>
-                            <button id="automationExecutePatchBtn"
-                                class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Execute
-                                patch</button>
-                            <button id="automationPlanRenderBtn"
-                                class="px-3 py-2 text-xs rounded-lg border border-white/20 text-white/80 hover:border-accent/40 hover:text-accent transition-colors">Plan
-                                render</button>
-                            <button id="automationExecuteRenderBtn"
-                                class="px-3 py-2 text-xs rounded-lg border border-accent/20 text-accent/90 hover:bg-accent hover:text-bg transition-colors">Execute
-                                render</button>
-                        </div>
-                        <p id="automationInfraStatus" class="text-[11px] text-white/40 min-h-[1rem]">Pronto para
-                            ingest/frame patch/render incremental.</p>
-                        <div id="automationInfraLog"
-                            class="max-h-[128px] overflow-auto custom-scrollbar rounded-lg border border-white/10 bg-black/35 p-2 space-y-1 text-[11px] text-white/70">
-                        </div>
-                    </div>
-                </aside>
+            <div class="absolute pointer-events-none z-[100] flex flex-col items-start" id="paul-cursor"
+                style="left: 450px; top: 360px;">
+                <svg class="drop-shadow-lg" width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" fill="var(--accent-yellow)" stroke="black"
+                        stroke-width="1.5"></path>
+                </svg>
+                <div
+                    class="bg-[var(--accent-yellow)] text-black text-[10px] font-bold px-2 py-0.5 rounded ml-3 -mt-1 shadow-lg">
+                    Paul</div>
             </div>
         </div>
     </div>
@@ -7514,6 +7594,17 @@
             setGenerateStatus('Cole link do YouTube, link direto de vídeo (mp4/webm/mov) ou envie um arquivo para começar.', 'muted');
             updateWorkflowGuide();
             refreshBackendHealth(true).catch(() => { });
+
+            // Space Canvas Paul Cursor Logic
+            const paulCursor = document.getElementById('paul-cursor');
+            if (paulCursor) {
+                document.addEventListener('mousemove', (e) => {
+                    requestAnimationFrame(() => {
+                        paulCursor.style.left = e.pageX + 'px';
+                        paulCursor.style.top = e.pageY + 'px';
+                    });
+                });
+            }
         });
     </script>
 
