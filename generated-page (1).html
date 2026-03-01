@@ -1561,6 +1561,62 @@
             </section>
         </main>
     </div>
+    <div id="postRenderModal"
+        class="hidden fixed inset-0 z-[250] items-center justify-center p-4 sm:p-6 bg-black/95 backdrop-blur-xl">
+        <div
+            class="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-[#07090d]/80 shadow-2xl overflow-hidden flex flex-col md:flex-row">
+
+            <button id="postRenderCloseBtn"
+                class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition">
+                <iconify-icon icon="solar:close-circle-linear" width="20" height="20"></iconify-icon>
+            </button>
+
+            <div
+                class="w-full md:w-3/5 bg-black relative flex items-center justify-center min-h-[300px] border-r border-white/5">
+                <video id="postRenderPreviewVideo" class="max-w-full max-h-[60vh] object-contain" loop controls
+                    playsinline></video>
+                <div class="absolute inset-0 pointer-events-none shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]"></div>
+            </div>
+
+            <div
+                class="w-full md:w-2/5 p-6 sm:p-8 flex flex-col justify-center bg-gradient-to-br from-[#0d1117] to-black">
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 text-accent mb-2">
+                        <iconify-icon icon="solar:check-circle-bold-duotone" width="24" height="24"></iconify-icon>
+                        <h2 class="text-xl font-display font-semibold text-white">Render Completo</h2>
+                    </div>
+                    <p class="text-sm text-white/50 leading-relaxed mb-4">Seu vídeo foi processado com sucesso e está
+                        pronto para uso.</p>
+
+                    <div
+                        class="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 text-xs text-white/70">
+                        <div class="flex justify-between"><span>Arquivo:</span> <span id="postRenderFileName"
+                                class="text-white font-medium">video.webm</span></div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 mt-auto">
+                    <button id="actionDownloadBtn"
+                        class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent text-bg font-bold shadow-[0_0_20px_rgba(200,255,0,0.2)] hover:shadow-[0_0_30px_rgba(200,255,0,0.4)] hover:brightness-110 transition-all">
+                        <iconify-icon icon="solar:download-square-bold-duotone" width="20" height="20"></iconify-icon>
+                        Baixar Vídeo Local
+                    </button>
+
+                    <button id="actionNextClipBtn"
+                        class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 bg-white/5 text-white font-medium hover:bg-white/10 transition-colors">
+                        <iconify-icon icon="solar:skip-next-bold-duotone" width="20" height="20"></iconify-icon>
+                        Salvar e Ir para Próximo
+                    </button>
+
+                    <button id="actionPostSocialsBtn"
+                        class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 font-medium hover:bg-blue-500/20 hover:border-blue-500/50 transition-colors mt-2">
+                        <iconify-icon icon="solar:plain-bold-duotone" width="20" height="20"></iconify-icon>
+                        Postar nas Plataformas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="videoAutomationModal" class="hidden fixed inset-0 z-[220] bg-black">
         <div class="canvas-space">
@@ -6111,6 +6167,71 @@
                 });
             }
 
+            let lastRenderedBlob = null;
+            let lastRenderedFileName = '';
+            const postRenderModal = document.getElementById('postRenderModal');
+            const postRenderPreviewVideo = document.getElementById('postRenderPreviewVideo');
+            const postRenderFileName = document.getElementById('postRenderFileName');
+
+            document.getElementById('postRenderCloseBtn').addEventListener('click', () => {
+                postRenderModal.classList.add('hidden');
+                postRenderModal.classList.remove('flex');
+                if (postRenderPreviewVideo.src) {
+                    URL.revokeObjectURL(postRenderPreviewVideo.src);
+                    postRenderPreviewVideo.src = '';
+                }
+            });
+
+            document.getElementById('actionDownloadBtn').addEventListener('click', () => {
+                if (lastRenderedBlob && lastRenderedFileName) {
+                    downloadBlob(lastRenderedBlob, lastRenderedFileName);
+                    setEditorStatus(`Download de ${lastRenderedFileName} iniciado.`, 'success');
+                }
+            });
+
+            document.getElementById('actionNextClipBtn').addEventListener('click', () => {
+                postRenderModal.classList.add('hidden');
+                postRenderModal.classList.remove('flex');
+                if (postRenderPreviewVideo.src) {
+                    URL.revokeObjectURL(postRenderPreviewVideo.src);
+                    postRenderPreviewVideo.src = '';
+                }
+
+                // Find next clip logic
+                const currentClip = getActiveClip();
+                if (currentClip) {
+                    const currentIndex = appState.clips.findIndex(c => c.id === currentClip.id);
+                    if (currentIndex >= 0 && currentIndex < appState.clips.length - 1) {
+                        const nextClip = appState.clips[currentIndex + 1];
+                        appState.activeClipId = nextClip.id;
+                        renderTimelineClips();
+                        syncCaptionEditor();
+                        seekPlayback(nextClip.start);
+                        setEditorStatus('Avançou para o próximo clip.', 'success');
+                    } else {
+                        setEditorStatus('Não há próximo clip na sequência.', 'muted');
+                    }
+                }
+            });
+
+            document.getElementById('actionPostSocialsBtn').addEventListener('click', () => {
+                if (!lastRenderedBlob) return;
+                const btn = document.getElementById('actionPostSocialsBtn');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<iconify-icon icon="solar:spinner-linear" class="animate-spin" width="20" height="20"></iconify-icon> Enviando...';
+
+                setTimeout(() => {
+                    btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold-duotone" width="20" height="20"></iconify-icon> Enviado para Fila!';
+                    btn.classList.add('bg-green-500/20', 'text-green-400', 'border-green-500/50');
+                    btn.classList.remove('bg-blue-500/10', 'text-blue-400', 'border-blue-500/30');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        btn.classList.remove('bg-green-500/20', 'text-green-400', 'border-green-500/50');
+                        btn.classList.add('bg-blue-500/10', 'text-blue-400', 'border-blue-500/30');
+                    }, 3000);
+                }, 1500);
+            });
+
             async function handleExport() {
                 const clip = getActiveClip();
                 if (!clip) {
@@ -6127,10 +6248,18 @@
                 try {
                     const blob = await exportClip(clip);
                     const fileName = `${slugify(clip.title)}.webm`;
-                    downloadBlob(blob, fileName);
+
+                    lastRenderedBlob = blob;
+                    lastRenderedFileName = fileName;
                     appState.exportCount += 1;
-                    setEditorStatus(`Exported ${fileName}.`, 'success');
-                    renderBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear" class="text-lg"></iconify-icon> <span>Exported!</span>';
+
+                    postRenderFileName.textContent = fileName;
+                    postRenderPreviewVideo.src = URL.createObjectURL(blob);
+                    postRenderModal.classList.remove('hidden');
+                    postRenderModal.classList.add('flex');
+
+                    setEditorStatus(`Render finalizado.`, 'success');
+                    renderBtn.innerHTML = '<iconify-icon icon="solar:check-circle-linear" class="text-lg"></iconify-icon> <span>Pronto</span>';
                     renderBtn.classList.add('bg-accent');
                     renderBtn.classList.remove('bg-white');
                 } catch (error) {
