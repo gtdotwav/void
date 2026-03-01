@@ -2356,10 +2356,12 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl, options = {}) {
   const tempDir = await mkdtemp(join(tmpdir(), 'jv-yt-'));
   const attemptErrors = [];
   const strategies = [
-    { label: 'default', extractorArgs: '' },
-    { label: 'android+ios', extractorArgs: 'youtube:player_client=android,ios' },
-    { label: 'tv+ios', extractorArgs: 'youtube:player_client=tv,ios' },
-    { label: 'web_embedded+android', extractorArgs: 'youtube:player_client=web_embedded,android' }
+    { label: 'default (com cookies)', extractorArgs: '', useCookies: true },
+    { label: 'default (sem cookies)', extractorArgs: '', useCookies: false },
+    { label: 'web (sem cookies)', extractorArgs: 'youtube:player_client=web', useCookies: false },
+    { label: 'android+ios (com cookies)', extractorArgs: 'youtube:player_client=android,ios', useCookies: true },
+    { label: 'tv+ios (com cookies)', extractorArgs: 'youtube:player_client=tv,ios', useCookies: true },
+    { label: 'web_creator (sem cookies)', extractorArgs: 'youtube:player_client=web_creator,web', useCookies: false }
   ];
 
   try {
@@ -2391,7 +2393,7 @@ async function downloadYoutubeAudioWithYtDlp(youtubeUrl, options = {}) {
         outTemplate
       ];
       appendYtDlpJsRuntimeArgs(args);
-      if (cookiesPath) {
+      if (cookiesPath && strategy.useCookies !== false) {
         args.push('--cookies', cookiesPath);
       }
       if (strategy.extractorArgs) {
@@ -2465,10 +2467,12 @@ async function downloadYoutubeVideoWithYtDlp(youtubeUrl, options = {}) {
   const tempDir = await mkdtemp(join(tmpdir(), 'jv-yt-video-'));
   const attemptErrors = [];
   const strategies = [
-    { label: 'default', extractorArgs: '' },
-    { label: 'android+ios', extractorArgs: 'youtube:player_client=android,ios' },
-    { label: 'tv+ios', extractorArgs: 'youtube:player_client=tv,ios' },
-    { label: 'web_embedded+android', extractorArgs: 'youtube:player_client=web_embedded,android' }
+    { label: 'default (com cookies)', extractorArgs: '', useCookies: true },
+    { label: 'default (sem cookies)', extractorArgs: '', useCookies: false },
+    { label: 'web (sem cookies)', extractorArgs: 'youtube:player_client=web', useCookies: false },
+    { label: 'android+ios (com cookies)', extractorArgs: 'youtube:player_client=android,ios', useCookies: true },
+    { label: 'tv+ios (com cookies)', extractorArgs: 'youtube:player_client=tv,ios', useCookies: true },
+    { label: 'web_creator (sem cookies)', extractorArgs: 'youtube:player_client=web_creator,web', useCookies: false }
   ];
 
   try {
@@ -2500,7 +2504,7 @@ async function downloadYoutubeVideoWithYtDlp(youtubeUrl, options = {}) {
         outTemplate
       ];
       appendYtDlpJsRuntimeArgs(args);
-      if (cookiesPath) {
+      if (cookiesPath && strategy.useCookies !== false) {
         args.push('--cookies', cookiesPath);
       }
       if (strategy.extractorArgs) {
